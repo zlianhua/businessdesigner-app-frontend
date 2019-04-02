@@ -49,12 +49,19 @@
                             v-model = "currentAttribute.description"
                             placeholder="请输入属性描述" />
                         </b-form-group>
-                        <b-form-select 
+                        <b-form-group
+                            id="attrTypeGroup"
+                            label="数据类型:"
+                            label-for="attrType"
+                            label-size="sm"
+                        >
+                            <b-form-select 
                             id = "attrType"
                             v-model = "currentAttribute.type"
                             size="sm"
                             @change = "attrTypeChanged"
                             :options="attrTypes"/>
+                        </b-form-group>
                         <b-form-checkbox
                             id="isPrimary"
                             name="isPrimary"

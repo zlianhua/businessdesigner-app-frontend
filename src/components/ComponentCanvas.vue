@@ -22,7 +22,7 @@
             <button id="zoomOut" @click="zoomOut" title="缩小"><font-awesome-icon icon="search-minus"/></button>
             <button id="resetZoom" @click="resetZoom" title="恢复原大小"><font-awesome-icon icon="search"/></button>
         </div>
-        <div id="paper" class="w-100"></div>
+        <div id="paper" tabindex="0" class="w-100" @keydown="paperOnKeyDown"></div>
     </div>
 </template>
 <script>
@@ -30,6 +30,7 @@ import * as extendedClass from '../extendedClass.js';
 const _ = require('lodash');
 const joint = require('jointjs');
 const V = joint.V;
+const g = joint.g;
 let graph;
 let paper;
 let graphScale = 1;
@@ -47,6 +48,7 @@ let myHighlighter2 = {
         }
     }
 };
+ 
 export default {
     name: 'ComponentCanvas',
     props:['entityMap'],
@@ -56,6 +58,12 @@ export default {
         }
     },
     methods:{
+        paperOnKeyDown(e){
+           if(e.keyCode == 46) {
+                e.preventDefault();
+                this.deleteCell();
+            }
+        },
         pressButton(event) {
             let button = event.target;
             if(currentSelectButton){
@@ -82,6 +90,29 @@ export default {
         resetZoom() {
             this.graphScale = 1;
             this.paperScale(this.graphScale, this.graphScale);
+        },
+        deleteCell(){
+            if(!this.currentHighLight){
+                return;
+            }
+            var id = this.currentHighLight.model.id;
+            this.$parent.entityMap.delete(id);
+            for(let [k,v] of this.$parent.linkMap){
+                if(v.sourceId==id || v.targetId==id){
+                    this.$parent.linkMap.delete(k);
+                    var link = findCellById(k);
+                    link.remove();
+                }
+            }
+            this.currentHighLight.model.remove();
+        },
+        cellHasSelfAssociation(cellId){
+            for(let[k,v] of this.$parent.linkMap){
+                if (v.targetId==cellId && (v.type=="SelfAssociation")){
+                    return true;
+                }
+            }
+            return false;
         },
         drawClass(classType,className,posX,posY){
             let fillColor ='#D2D2D2';
@@ -115,7 +146,7 @@ export default {
             return aNewClass;            
         },
         findCellById(cellId){
-            var returnCell = null;
+            let returnCell = null;
             _.each(this.graph.getCells(), function(cell) {
                 if(cell.id==cellId){
                     returnCell = cell;
@@ -123,6 +154,47 @@ export default {
                 }
             });
             return returnCell;
+        },
+        createLinkTool(paper,link){
+            var verticesTool = new joint.linkTools.Vertices();
+            var segmentsTool = new joint.linkTools.Segments();
+            var boundaryTool = new joint.linkTools.Boundary();
+            let _this=this;
+            var infoButton = new joint.linkTools.Button({
+                markup: [{
+                    tagName: 'circle',
+                    selector: 'button',
+                    attributes: {
+                        'r': 7,
+                        'fill': '#001DFF',
+                        'cursor': 'pointer'
+                    }
+                }, {
+                    tagName: 'path',
+                    selector: 'icon',
+                    attributes: {
+                        'd': 'M -2 4 2 4 M 0 3 0 0 M -2 -1 1 -1 M -1 -4 1 -4',
+                        'fill': 'none',
+                        'stroke': '#FFFFFF',
+                        'stroke-width': 2,
+                        'pointer-events': 'none'
+                    }
+                }],
+                distance: 70,
+                offset: 0,
+                action: function(evt) {
+                    var linkObj = _this.$parent.linkMap.get(link.id);
+                    _this.$eventHub.$emit ('showLinkProperties',linkObj);
+                }
+            });
+            var toolsView = new joint.dia.ToolsView({
+                tools: [
+                    verticesTool, segmentsTool,
+                    boundaryTool, infoButton
+                ]
+            });
+            var linkView = link.findView(this.paper);
+            linkView.addTools(toolsView);
         }
     },
     mounted(){
@@ -154,6 +226,25 @@ export default {
         });
         this.paper.options.gridSize=10;
         this.paper.drawGrid();
+        this.graph.on("add",function(cell){
+            if(!cell.isLink()){
+                var paperContainer = document.getElementById("paper");
+                var curXPos = cell.attributes.position.x;
+                var maxWidth = curXPos+cell.attributes.size.width;
+                var curYPos = cell.attributes.position.y;
+                var maxHeight =curYPos+cell.attributes.size.height;
+                if(maxWidth>paperContainer.offsetWidth || maxHeight>paperContainer.offsetHeight){
+                    zoomOut();
+                }
+            }
+        });
+
+        this.graph.on("remove",function(cell){
+            if(cell.isLink()){
+                cell.remove();
+                this.$parent.linkMap.delete(cell.id);
+            }
+        });
         this.paper.on({
             'blank:mousewheel DOMMouseScroll' : function(event){
                 if(event.ctrlKey === true){
@@ -175,10 +266,10 @@ export default {
                 if(currentSelectButton){
                     let objType = currentSelectButton.getAttribute('objType');
                     if(objType && objType=="Class"){
-                        var count=0;
+                        let count=0;
                         for(let [k,v] of this.$parent.entityMap) {
                             if (v!==null && v.entityName.startsWith("Untitled")) {
-                                var curSeq = v.entityName.replace("Untitled","");
+                                let curSeq = v.entityName.replace("Untitled","");
                                 if(curSeq.trim()==""){
                                     curSeq=0;
                                 }else{
@@ -190,11 +281,11 @@ export default {
                                 }
                             }
                         }
-                        var className="Untitled";
+                        let className="Untitled";
                         if(count>0){
                             className=className+count;
                         }
-                        var classType="class";
+                        let classType="class";
                         if(currentSelectButton.id=="btnExternalClass"){
                             classType="externalClass";
                         }
@@ -224,24 +315,161 @@ export default {
                    this. currentHighLight.unhighlight(null, this.myHighlighter2);
                 }
                 elementView.highlight(null, this.myHighlighter2);
-               this. currentHighLight=elementView;
-                
+                this. currentHighLight=elementView;
+                if(null==currentSelectButton){
+                    return;
+                }else{
+                    let theElement = document.getElementById(currentSelectButton.id);
+                    let objType = theElement.getAttribute('objType');
+                    if(objType!="association"){
+                        return;
+                    }
+                }
+                elementView.options.interactive = false;
+                if(currentSelectButton.id=="btnGeneralization"){
+                    let association = new uml.Generalization({ source: { id: elementView.model.id }, target: { x: x, y: y }});
+                    evt.data = { link: association, x: x, y: y };
+                }else if(currentSelectButton.id=="btnAssociation"){
+                    let association = new uml.Association({ source: { id: elementView.model.id }, target: { x: x, y: y }});
+                    evt.data = { link: association, x: x, y: y };
+                    evt.data.link.appendLabel({attrs: {text: {text: '0..*',role:'sourceRole'}},position:{distance: 0.15,offset: 20}});
+                    evt.data.link.appendLabel({attrs: {text: {text: '0..1',role:'targetRole'}},position:{distance: 0.85,offset: 20}});
+                }else if(currentSelectButton.id=="btnSelfAssociation"){
+                    if(this.cellHasSelfAssociation(elementView.model.id)){
+                        return;
+                    }
+                    let association = new uml.Association({ source: { id: elementView.model.id }, target: { id: elementView.model.id}});
+                    let position = elementView.model.attributes.position;
+                    let size = elementView.model.attributes.size;
+                    let centerPosX=position.x+size.width/2;
+                    let centerPosY=position.y+size.height/2;
+                    let vertical_1x=position.x+size.width+50;
+                    let vertical_1y=centerPosY;
+                    let vertical_2x=vertical_1x;
+                    let vertical_2y=position.y-50;
+                    let vertical_3x=centerPosX;
+                    let vertical_3y=vertical_2y;
+                    evt.data = { link: association, x: centerPosX, y: centerPosY};
+                    let verticals = [{x:vertical_1x,y:vertical_1y},{x:vertical_2x,y:vertical_2y},{x:vertical_3x,y:vertical_3y}];
+                    evt.data.link.set('source',{id:elementView.model.id});
+                    evt.data.link.set('target',{id:elementView.model.id});
+                    evt.data.link.set('vertices',verticals);
+                    elementView.model.embed(evt.data.link);
+                    let assoType = currentSelectButton.id.replace("btn","");
+                    let linkObj = {
+                        id:evt.data.link.id,
+                        type:assoType,
+                        sourceId:elementView.model.id,
+                        targetId:elementView.model.id,
+                        sourceName:elementView.model.name,
+                        targetName:elementView.model.name
+                    };
+                    this.$parent.linkMap.set(evt.data.link.id,linkObj);
+                    this.graph.addCell(evt.data.link);
+                    elementView.options.interactive=true;
+                }else if(currentSelectButton.id=="btnAggregation"){
+                    let association = new uml.Aggregation({ source: { id: elementView.model.id }, target: { x: x, y: y }});
+                    evt.data = { link: association, x: x, y: y };
+                    evt.data.link.appendLabel({attrs: {text: {text: '0..*',role:'sourceRole'}},position:{distance: 0.15,offset: 20}});
+                    evt.data.link.appendLabel({attrs: {text: {text: '1..1',role:'targetRole'}},position:{distance: 0.85,offset: 20}});
+                }else if(currentSelectButton.id=="btnComposition"){
+                    let association = new uml.Composition({ source: { id: elementView.model.id }, target: { x: x, y: y }});
+                    evt.data = { link: association, x: x, y: y };
+                    evt.data.link.appendLabel({attrs: {text: {text: '0..*',role:'sourceRole'}},position:{distance: 0.15,offset: 20}});
+                    evt.data.link.appendLabel({attrs: {text: {text: '1..1',role:'targetRole'}},position:{distance: 0.85,offset: 20}});
+                }
+                evt.data.link.addTo(this.graph);
+                currentElementView =elementView;
+            },
+            'element:pointermove': function(elementView,evt, x, y) {
+                if(null==currentSelectButton){
+                    return;
+                }else{
+                    var theElement = document.getElementById(currentSelectButton.id);
+                    var objType = theElement.getAttribute('objType');
+                    if(objType!="association" || currentSelectButton.id=="btnSelfAssociation"){
+                        return;
+                    }
+                }
+                evt.data.link.set('target', { x: x, y: y });
             },
             'element:pointerup': function(elementView, evt,x,y){
                 let entity = this.$parent.entityMap.get(elementView.model.id);
-                this.$eventHub.$emit ('classSelected',entity);
+                if(entity){
+                    this.$eventHub.$emit ('classSelected',entity);
+                }
+        
+                if(null==currentSelectButton){
+                    return;
+                }else{
+                    var theElement = document.getElementById(currentSelectButton.id);
+                    var objType = theElement.getAttribute('objType');
+                    if(objType!="association"||currentSelectButton.id=="btnSelfAssociation"){
+                        return;
+                    }
+                }
+                let currentElement =currentElementView.model;
+                var coordinates = new g.Point(x, y);
+                var elementTarget = this.graph.findModelsFromPoint(coordinates).find(function(el) {
+                    return (el.id !== currentElement.id);
+                });
+                if (elementTarget && this.graph.getNeighbors(currentElement).indexOf(currentElement) === -1 && null!= evt.data.link) {
+                    evt.data.link.target({ id: elementTarget.id });
+                    this.createLinkTool(this,evt.data.link);
+                    var labels = evt.data.link.labels();
+                    var idx=0;
+                    var sourceRoleLabel;
+                    var targetRoleLabel;
+                    _.each(labels,function(label) {
+                        if(label.attrs.text.role=="sourceRole"){
+                            sourceRoleLabel = label.attrs.text.text;
+                        }else if (label.attrs.text.role=="targetRole"){
+                            targetRoleLabel = label.attrs.text.text;
+                        }
+                        idx++;
+                    });
+                    var assoType = currentSelectButton.id.replace("btn","");
+                    var linkObj = {
+                        id:evt.data.link.id,
+                        sourceRelationName:"",
+                        targetRelationName:"",
+                        type:assoType,
+                        sourceId:evt.data.link.getSourceElement().id,
+                        targetId:elementTarget.id,
+                        sourceName:evt.data.link.getSourceElement().get("name"),
+                        targetName:elementTarget.get("name"),
+                        sourceRoleLabel:sourceRoleLabel,
+                        targetRoleLabel:targetRoleLabel
+                    };
+                    this.$parent.linkMap.set(evt.data.link.id,linkObj);
+                    this.graph.addCell(evt.data.link);
+                    if(linkObj.type=="Generalization"){
+                        var sourceEntity = this.$parent.entityMap.get(linkObj.sourceId);
+                        if(sourceEntity){
+                            var idx=0;
+                            _.each(sourceEntity.attributes,function(attr){
+                                if(attr.isPrimary){
+                                    sourceEntity.attributes.splice(idx);
+                                    return;
+                                }
+                                idx++;
+                            });
+                            var sourceCell=this.findCellById(linkObj.sourceId);
+                            var cellAttrs=sourceCell.get("attributes");
+                            if(cellAttrs[idx]){
+                                cellAttrs.splice(idx);
+                                sourceCell.attributes.attributes=cellAttrs;
+                                this.graph.fromJSON(graph.toJSON());
+                            }
+                        }
+                    }
+                }else{
+                    evt.data.link.remove();
+                }
+                currentElementView.options.interactive=true;
             }    
         },this);
-        $('#paper').hover(function() {
-            this.focus();
-        }, function() {
-            this.blur();
-        }).keydown(function(e) {
-            if(e.keyCode == 46) {
-                e.preventDefault();
-                deleteCell();
-            }
-        });
+
         let _this=this;
         this.$eventHub.$on('ClassNameChanged',function(currentClass){
             let entityCell = _this.findCellById(currentClass.id);
@@ -252,16 +480,16 @@ export default {
         this.$eventHub.$on('AttributesChanged',function(currentClass){
             let entityCell = _this.findCellById(currentClass.id);
             if(entityCell){
-                var newAttributes=[];
+                let newAttributes=[];
                 _.each(currentClass.attributes,function(attr){
-                    var attrLabel = attr.name+": "+attr.type;
+                    let attrLabel = attr.name+": "+attr.type;
                     if(attr.isPrimary){
                         attrLabel+="  <pk>"
                     }
                     newAttributes[newAttributes.length] = attrLabel;
                 });
                 entityCell.set("attributes",newAttributes);
-                var newHeight = 14*newAttributes.length;
+                let newHeight = 14*newAttributes.length;
                 if(newHeight<100){
                     newHeight = 100;
                 }

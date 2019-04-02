@@ -4,10 +4,10 @@
             <ComponentPropertyEditor :component="$parent.component"/>
         </div>
         <div v-if="isShowClassProperties==true && editClass!=null ">
-            <ClassEditor :editClass="editClass"/>
+            <ClassEditor :editClass = "editClass"/>
         </div> 
-        <div v-if="isShowLinkProperties==true">
-            
+        <div v-if="isShowLinkProperties==true && editLinkObj!=null">
+            <LinkEditor :linkObj = "editLinkObj"/>
         </div>   
     </div>
 </template>
@@ -16,8 +16,10 @@ let isShowComponentProperties= false;
 let isShowClassProperties = false;
 let isShowLinkProperties= false;
 let editClass = null;
+let editLinkObj=null;
 import ComponentPropertyEditor from '@/components/ComponentPropertyEditor';
 import ClassEditor from '@/components/ClassEditor';
+import LinkEditor from '@/components/LinkEditor';
 export default {
   name: 'ComponentEditor',
   data: function(){
@@ -41,10 +43,12 @@ export default {
         this.editClass = currentClass;
         this.$eventHub.$emit('classChanged',currentClass);
     },
-    showLinkProperties(){
+    showLinkProperties(currentLinkObj){
         this.isShowComponentProperties = false;
         this.isShowClassProperties =false;
+        this.isShowLinkProperties = false;
         this.isShowLinkProperties = true;
+        this.editLinkObj = currentLinkObj;
     }
   },
   mounted(){
@@ -53,11 +57,14 @@ export default {
     this.$eventHub.$on('classSelected',function(currentClass){
         _this.showClassProperties(currentClass);
     });
-    this.$eventHub.$on('showLinkProperties',this.showLinkProperties);
+    this.$eventHub.$on('showLinkProperties',function(currentLinkObj){
+        _this.showLinkProperties(currentLinkObj);
+    });
   },
   components: {
     ComponentPropertyEditor,
-    ClassEditor
+    ClassEditor,
+    LinkEditor
   }
 }
 </script>    

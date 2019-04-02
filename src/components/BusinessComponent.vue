@@ -18,6 +18,7 @@ import ComponentCanvas from '@/components/ComponentCanvas';
 import ComponentEditor from '@/components/ComponentEditor';
 import Vue from 'vue';
 let entityMap = new Map();
+let linkMap = new Map();
 let component = {
     simpleName: "",
     basePackageName: "com.ai.bss",
@@ -49,6 +50,7 @@ export default {
         return {
             component: component,
             entityMap: entityMap,
+            linkMap: linkMap,
             eventBus: eventBus
         }
     },
