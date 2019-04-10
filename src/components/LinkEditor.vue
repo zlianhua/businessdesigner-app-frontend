@@ -36,6 +36,7 @@
                             id = "sourceRoleLabel"
                             v-model = "linkObj.sourceRoleLabel"
                             size="sm"
+                            @change="roleLabelChanged"
                             :options="roleOptions"/>
                         </b-form-group>
                         <b-form-group>
@@ -44,6 +45,7 @@
                             id = "targetRoleLabel"
                             v-model = "linkObj.targetRoleLabel"
                             size="sm"
+                            @change="roleLabelChanged"
                             :options="roleOptions"/>
                         </b-form-group>
                     </b-form>
@@ -65,6 +67,11 @@ export default {
                 "0..*",
                 "*..*"
             ]
+        }
+    },
+    methods:{
+        roleLabelChanged(){
+            this.$eventHub.$emit ('roleLabelChanged',this.linkObj);
         }
     }
 }

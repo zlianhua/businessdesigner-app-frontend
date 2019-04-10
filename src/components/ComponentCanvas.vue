@@ -38,6 +38,7 @@ let currentSelectButton = null;
 let currentHighLight = null;
 let currentElementView = null;
 const uml = joint.shapes.uml;
+let _this=this;
 let myHighlighter2 = {
     highlighter: {
         name: 'stroke',
@@ -142,7 +143,15 @@ export default {
             aNewClass.attributes.attrs['.uml-class-attrs-rect'].stroke=strokeColor;
             aNewClass.attributes.attrs['.uml-class-methods-rect'].stroke=strokeColor;
             this.graph.addCell(aNewClass);
-            this.$parent.entityMap.set(aNewClass.id,{id:aNewClass.id,entityName:className,type:aNewClass.get("type"),attributes:[],annotations:[]});
+            this.$parent.entityMap.set(aNewClass.id,
+                {id:aNewClass.id,
+                entityName:className,
+                type:aNewClass.get("type"),
+                attributes:[],
+                annotations:[],
+                commandServices:[],
+                queryServices:[]
+                });
             return aNewClass;            
         },
         findCellById(cellId){
@@ -198,6 +207,7 @@ export default {
         }
     },
     mounted(){
+        let _this = this;
         this.graphScale = 1;
         this.graph = new joint.dia.Graph();
         this.paper = new joint.dia.Paper({
@@ -234,7 +244,7 @@ export default {
                 var curYPos = cell.attributes.position.y;
                 var maxHeight =curYPos+cell.attributes.size.height;
                 if(maxWidth>paperContainer.offsetWidth || maxHeight>paperContainer.offsetHeight){
-                    zoomOut();
+                    this.zoomOut();
                 }
             }
         });
@@ -242,7 +252,7 @@ export default {
         this.graph.on("remove",function(cell){
             if(cell.isLink()){
                 cell.remove();
-                this.$parent.linkMap.delete(cell.id);
+                _this.$parent.linkMap.delete(cell.id);
             }
         });
         this.paper.on({
@@ -292,7 +302,9 @@ export default {
                         if(currentSelectButton.id=="btnAbstractClass"){
                             classType="abstractClass";
                         }
-                        this.drawClass(classType,className,x,y);
+                        let newClass = this.drawClass(classType,className,x,y);
+                    }else{
+                        this.$eventHub.$emit ('showComponentProperties');
                     }
                 }else{
                     this.$eventHub.$emit ('showComponentProperties');
@@ -378,7 +390,9 @@ export default {
                     evt.data.link.appendLabel({attrs: {text: {text: '0..*',role:'sourceRole'}},position:{distance: 0.15,offset: 20}});
                     evt.data.link.appendLabel({attrs: {text: {text: '1..1',role:'targetRole'}},position:{distance: 0.85,offset: 20}});
                 }
-                evt.data.link.addTo(this.graph);
+                if(currentSelectButton.id!="btnSelfAssociation"){
+                    this.graph.addCell(evt.data.link);
+                }
                 currentElementView =elementView;
             },
             'element:pointermove': function(elementView,evt, x, y) {
@@ -470,7 +484,6 @@ export default {
             }    
         },this);
 
-        let _this=this;
         this.$eventHub.$on('ClassNameChanged',function(currentClass){
             let entityCell = _this.findCellById(currentClass.id);
             if(entityCell){
@@ -498,8 +511,45 @@ export default {
                 }
             }
         });
+        this.$eventHub.$on('roleLabelChanged',function(currentLinkObj){
+            let link = _this.findCellById(currentLinkObj.id);
+            let idx=0;
+            if(link){
+                let labels = link.labels();
+                _.each(labels,function(label){
+                    if(label.attrs.text.role=="sourceRole" && label.attrs.text!=currentLinkObj.sourceRoleLabel){
+                        link.label(idx,{ attrs: { text: { text: currentLinkObj.sourceRoleLabel } } });
+                    }else if (label.attrs.text.role=="targetRole" && label.attrs.text!=currentLinkObj.targetRoleLabel){
+                        link.label(idx,{ attrs: { text: { text: currentLinkObj.targetRoleLabel } } });
+                    }
+                    idx++;
+                });
+            }
+        });
+        this.$eventHub.$on('serviceChanged',function(currentClass){
+            let entityCell = _this.findCellById(currentClass.id);
+            if(entityCell){
+                let methods=[];
+                let commandServices = currentClass.commandServices;
+                let queryServices = currentClass.queryServices;
+                _.each(commandServices,function(commandService){
+                    var methodName = commandService.name;
+                    if(methodName.length>30){
+                        methodName = methodName.substr(0,30)+"...";
+                    }
+                    methods.push(methodName);
+                });
+                _.each(queryServices,function(queryService){
+                    var methodName = queryService.name;
+                    if(methodName.length>30){
+                        methodName = methodName.substr(0,30)+"...";
+                    }
+                    methods.push(methodName);
+                });
+                entityCell.set("methods",methods);
+            }
+        });
     }
-
 };
 </script>
 

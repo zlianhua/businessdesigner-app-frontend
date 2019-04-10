@@ -4,7 +4,7 @@
             <ComponentPropertyEditor :component="$parent.component"/>
         </div>
         <div v-if="isShowClassProperties==true && editClass!=null ">
-            <ClassEditor :editClass = "editClass"/>
+            <ClassEditor :editClass = "editClass" :entityMap="entityMap" :linkMap="linkMap"/>
         </div> 
         <div v-if="isShowLinkProperties==true && editLinkObj!=null">
             <LinkEditor :linkObj = "editLinkObj"/>
@@ -22,6 +22,7 @@ import ClassEditor from '@/components/ClassEditor';
 import LinkEditor from '@/components/LinkEditor';
 export default {
   name: 'ComponentEditor',
+  props:['entityMap','linkMap'],
   data: function(){
       return {
         isShowComponentProperties,

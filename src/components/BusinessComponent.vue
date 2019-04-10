@@ -2,11 +2,11 @@
     <b-container id="objectDiagram">
         <b-row>
             <!--draw area-->
-            <b-col cols=8>
+            <b-col cols=7>
                 <ComponentCanvas :entityMap="entityMap"/>
             </b-col>
-            <b-col cols=4>
-                <ComponentEditor/>
+            <b-col cols=5>
+                <ComponentEditor :entityMap ="entityMap" :linkMap="linkMap"/>
             </b-col>
         </b-row>
         <b-button @click="logComponent">logComponent</b-button>

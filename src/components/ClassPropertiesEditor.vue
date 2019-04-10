@@ -9,78 +9,62 @@
         <button @click="importdAttributeFromDB" title="从数据库表导入属性">
             <font-awesome-icon icon="database" />
         </button>
-        <b-table striped  responsive :small=true :bordered=true hover :items="editClass.attributes" :fields="attributeFields"
-        ref="attributesTable" @row-clicked = showAttributeDetail head-variant="light" thead-tr-class="sm">
-            <template slot="actions" slot-scope="row">
-                <button @click="deleteAttribute(row.index)">
-                <font-awesome-icon icon="trash"/>
-                </button>
-            </template>
-        </b-table>        
+        <b-table striped  responsive :small=true :bordered=true hover :items="editClass.attributes" :fields="attributeFields" class="my-table"
+            ref="attributesTable" @row-clicked = "showAttributeDetail" head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm"
+            >
+                    <!-- A virtual column -->
+                <template slot="index" slot-scope="row">
+                    {{ row.index + 1 }}
+                </template>
+                <template slot="actions" slot-scope="row">
+                    <button @click="deleteAttribute(row.item)">
+                    <font-awesome-icon icon="trash"/>
+                    </button>
+                </template>
+                <template slot="isPrimary" slot-scope="row">
+                    <b-form-checkbox
+                        v-model = "row.item.isPrimary"
+                        size="sm"
+                        unchecked-value="false"
+                        @change="isPrimaryChanged(row.item)"
+                    ></b-form-checkbox>
+                </template>
+                <template slot="isCharSpec" slot-scope="row">
+                    <b-form-checkbox
+                        v-model = "row.item.isCharSpec"
+                        size="sm"
+                        unchecked-value="false"
+                        @change="isCharSpecChanged(row.item)"
+                    ></b-form-checkbox>
+                </template>
+        </b-table>
+        <br>
         <b-card no-body bg-variant="light" v-if="isShowAttributeProperties==true && currentAttribute!=null">
             <b-tabs card>
                 <b-tab title="明细" active>
-                    <b-form @submit.prevent >
-                        <b-form-group
-                            id="attributeNameGroup"
-                            label="属性名称:"
-                            label-for="attributeName"
-                            label-size="sm"
-                        >
-                            <b-form-input
-                            id="attributeName"
-                            type="text"
-                            size="sm"
-                            v-model = "currentAttribute.name"
-                            @change = "attrNameChanged"
-                            required
-                            placeholder="请输入属性名称" />
-                        </b-form-group>
-                        <b-form-group
-                            id="attributeNameGroup"
-                            label="属性描述:"
-                            label-for="attributeDescription"
-                            label-size="sm"
-                        >
-                            <b-form-input
-                            id="attributeName"
-                            type="text"
-                            size="sm"
-                            v-model = "currentAttribute.description"
-                            placeholder="请输入属性描述" />
-                        </b-form-group>
-                        <b-form-group
-                            id="attrTypeGroup"
-                            label="数据类型:"
-                            label-for="attrType"
-                            label-size="sm"
-                        >
-                            <b-form-select 
-                            id = "attrType"
-                            v-model = "currentAttribute.type"
-                            size="sm"
-                            @change = "attrTypeChanged"
-                            :options="attrTypes"/>
-                        </b-form-group>
-                        <b-form-checkbox
-                            id="isPrimary"
-                            name="isPrimary"
-                            v-model = "currentAttribute.isPrimary"
-                            @change = "isPrimaryChanged"
-                            size="sm"
-                        >
-                        是否主键
-                        </b-form-checkbox>
-                        <b-form-checkbox
-                            id="isCharSpec"
-                            name="isCharSpec"
-                            v-model = "currentAttribute.isCharSpec"
-                            size="sm"
-                            unchecked-value="false"
-                        >
-                        是否特征
-                        </b-form-checkbox>
-                    </b-form>
+                    <form @submit.prevent >
+                        <div class="form-group row">
+                            <label for="attributeName" class="col-sm-4 col-form-label-sm">名称:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control col-form-label-sm" id="attributeName" placeholder="请输入属性名称" 
+                                :value = "currentAttribute.name" @change = "attrNameChanged(currentAttribute.name,$event)" required>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="description" class="col-sm-4 col-form-label-sm">描述:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control col-form-label-sm" id="description" placeholder="请输入属性描述" 
+                                v-model = "currentAttribute.description" required>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="attrType" class="col-sm-4 col-form-label-sm">数据类型:</label>
+                            <div class="col-sm-8">
+                                <b-select id="attrType" class="col-form-label-sm" :options="attrTypes" @change = "attrTypeChanged"
+                                v-model = "currentAttribute.type"></b-select>
+                            </div>
+                        </div>
+                    </form>
                 </b-tab>
                 <b-tab title="注解">
                     <AnnotationsEditor :mainClass = "currentAttribute"/>
@@ -98,6 +82,7 @@
 <script>
 import AnnotationsEditor from '@/components/AnnotationsEditor';
 let currentAttribute;
+let currentAttributeIdx=-1;
 let isShowAttributeProperties=false;
 export default {
     name:'ClassPropertiesEditor',
@@ -106,6 +91,7 @@ export default {
         showAttributeDetail(attribute,index){
             this.currentAttribute = attribute;
             this.isShowAttributeProperties = true;
+            this.currentAttributeIdx = index;
         },
         addAttribute(){
             var newRow = {
@@ -126,6 +112,8 @@ export default {
             };
             this.editClass.attributes.push(newRow);
             this.$refs.attributesTable.refresh();
+            let _this=this;
+            setTimeout(function(){_this.clickAttributeTableRow(_this.editClass.attributes.length-1)},20);
         },
         importdAttributeFromPdm(){
 
@@ -133,24 +121,65 @@ export default {
         importdAttributeFromDB(){
 
         },
-        deleteAttribute(index){
-            this.editClass.attributes.splice(index, 1);
+        deleteAttribute(item){
+            let preIdx=0;
+            for( let i = 0; i < this.editClass.attributes.length; i++){ 
+                if ( this.editClass.attributes[i] === item) {
+                    this.editClass.attributes.splice(i, 1);
+                    preIdx = i-1;
+                }
+            }
+            if(preIdx<0){
+                preIdx=0;
+            }
             this.$refs.attributesTable.refresh();
             this.$eventHub.$emit ('AttributesChanged',this.editClass);
+            this.clickAttributeTableRow(preIdx);
         },
-        attrNameChanged(){
-            this.$eventHub.$emit ('AttributesChanged',this.editClass);
+        attrNameChanged(oldValue,event){
+            let newValue = event.target.value;
+            let _this= this;
+            let hasError=false;
+            _.each(this.editClass.attributes,function(attr,index){
+                if(index!==_this.currentAttributeIdx && attr.name.trim()===newValue.trim()){
+                    alert("同名属性已存在，请更换！")
+                    hasError = true;
+                    return false;
+                }
+            });
+            if(!hasError){
+                this.currentAttribute.name = newValue;
+                this.$eventHub.$emit ('AttributesChanged',this.editClass);
+            }else{
+                event.target.value = oldValue;
+            }
         },
         attrTypeChanged(){
             this.$eventHub.$emit ('AttributesChanged',this.editClass);
         },
-        isPrimaryChanged(){
-            if(this.currentAttribute.isPrimary){
-                this.currentAttribute.isPrimary = false;
+        isPrimaryChanged(item){
+            this.currentAttribute = item;
+            if(item.isPrimary){
+                item.isPrimary = false;
             }else{
-                this.currentAttribute.isPrimary = true;
+                item.isPrimary = true;
             }
+            let _this= this;
+            _.each(this.editClass.attributes,function(attr){
+                if(attr!==item && attr.isPrimary){
+                    attr.isPrimary = false;
+                }
+            });
             this.$eventHub.$emit ('AttributesChanged',this.editClass);       
+        },
+        isCharSpecChanged(item){
+            this.currentAttribute = item;
+        },
+        clickAttributeTableRow(index){
+            let myTable = this.$refs.attributesTable.$el,
+            tableBody = myTable.getElementsByTagName('tbody')[0],
+            tableRows = tableBody.getElementsByTagName('tr')
+            tableRows[index].click();
         }
     },
     data(){
@@ -158,6 +187,11 @@ export default {
             isShowAttributeProperties,
             currentAttribute,
             attributeFields: [
+                {
+                    key: 'index',
+                    label:'序号',
+                    sortable: false
+                },
                 {
                     key: 'name',
                     label:'名称',
@@ -200,9 +234,17 @@ export default {
         this.$eventHub.$on('classChanged', function(newClass){
             _this.currentAttribute = _currentAttruibute;
         });
+        this.totalRows = this.editClass.attributes.length;
     },
     components: {
         AnnotationsEditor
     }
 }
-</script>         
+</script> 
+<style>
+.my-table {
+  max-height: 200px;
+  overflow-y: auto;
+}
+</style>
+        
