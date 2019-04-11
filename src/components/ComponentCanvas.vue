@@ -39,16 +39,6 @@ let currentHighLight = null;
 let currentElementView = null;
 const uml = joint.shapes.uml;
 let _this=this;
-let myHighlighter2 = {
-    highlighter: {
-        name: 'stroke',
-        options: {
-            padding: 10,
-            rx: 2,
-            ry: 2
-        }
-    }
-};
  
 export default {
     name: 'ComponentCanvas',
@@ -204,6 +194,24 @@ export default {
             });
             var linkView = link.findView(this.paper);
             linkView.addTools(toolsView);
+        },
+        resizeClassCell(cell){
+            let newHeight = 0;
+            if(cell.attributes){
+                newHeight = newHeight + cell.attributes.attributes.length;
+            }
+            if(cell.methods){
+                newHeight = newHeight + cell.attributes.methods.length;
+            }
+            newHeight = 14*newHeight;
+            if(newHeight<100){
+                newHeight = 100;
+            }
+            if(newHeight!=cell.attributes.size.height){
+                cell.resize(cell.attributes.size.width,newHeight);
+            }
+            this.currentHighLight.unhighlight();
+            this.currentHighLight.highlight();
         }
     },
     mounted(){
@@ -244,7 +252,7 @@ export default {
                 var curYPos = cell.attributes.position.y;
                 var maxHeight =curYPos+cell.attributes.size.height;
                 if(maxWidth>paperContainer.offsetWidth || maxHeight>paperContainer.offsetHeight){
-                    this.zoomOut();
+                    _this.zoomOut();
                 }
             }
         });
@@ -260,15 +268,15 @@ export default {
                 if(event.ctrlKey === true){
                     event.preventDefault();
                     if(event.originalEvent.wheelDelta > 0) {
-                        this.zoomIn();
+                        _this.zoomIn();
                     }else {
-                        this.zoomOut();
+                        _this.zoomOut();
                     }
                 }
             },
             'blank:pointerclick' : function(evt, x, y) {
                if(this.currentHighLight){
-                    this.currentHighLight.unhighlight(null, myHighlighter2);
+                    this.currentHighLight.unhighlight();
                 }
                 if(currentElementView!==null){
                     currentElementView.options.interactive = true;
@@ -312,7 +320,7 @@ export default {
             },
             'blank:contextmenu' : function(evt, x, y) {
                 if(null!=this.currentHighLight){
-                    this.currentHighLight.unhighlight(null, this.myHighlighter2);
+                    this.currentHighLight.unhighlight();
                 }
                 if(currentSelectButton){
                     currentSelectButton.style.border="";
@@ -324,9 +332,9 @@ export default {
             },
             'element:pointerdown': function(elementView, evt,x,y) {
                 if(null!=this.currentHighLight){
-                   this. currentHighLight.unhighlight(null, this.myHighlighter2);
+                   this. currentHighLight.unhighlight();
                 }
-                elementView.highlight(null, this.myHighlighter2);
+                elementView.highlight();
                 this. currentHighLight=elementView;
                 if(null==currentSelectButton){
                     return;
@@ -502,13 +510,7 @@ export default {
                     newAttributes[newAttributes.length] = attrLabel;
                 });
                 entityCell.set("attributes",newAttributes);
-                let newHeight = 14*newAttributes.length;
-                if(newHeight<100){
-                    newHeight = 100;
-                }
-                if(newHeight!=entityCell.attributes.size.height){
-                    entityCell.resize(entityCell.attributes.size.width,newHeight);
-                }
+                _this.resizeClassCell(entityCell);
             }
         });
         this.$eventHub.$on('roleLabelChanged',function(currentLinkObj){
@@ -547,6 +549,7 @@ export default {
                     methods.push(methodName);
                 });
                 entityCell.set("methods",methods);
+                _this.resizeClassCell(entityCell);
             }
         });
     }

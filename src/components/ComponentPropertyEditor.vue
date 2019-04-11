@@ -1,116 +1,69 @@
 <template>
-    <b-card no-body bg-variant="light">
+    <b-card no-body bg-variant="light" class="col-form-label-sm">
         <b-tabs card>
             <b-tab title="构件信息" active>
                 <b-form @submit.prevent>
-                    <b-form-group
-                        id="componentNameGroup"
-                        label="构件名称:"
-                        label-for="simpleName"
-                        label-size="sm"
-                    >
-                        <b-form-input
-                        id="simpleName"
-                        type="text"
-                        size="sm"
-                        v-model="component.simpleName"
-                        required
-                        placeholder="请输入构件名称" />
-                    </b-form-group>
-                    <b-form-group   
-                            id="basePackageNameGroup"
-                            label="构件路径:"
-                            label-for="basePackageName"
-                            label-size="sm"
-                    >
-                        <b-form-input
-                            id="basePackageName"
-                            type="text"
-                            size="sm"
-                            v-model="component.basePackageName"
-                            required
-                            placeholder="请输入构件路径" />
-                    </b-form-group>
-                    <b-form-group   
-                            id="descriptionGroup"
-                            label="描述:"
-                            label-for="description"
-                            label-size="sm"
-                    >
-                        <b-form-input
-                            id="description"
-                            type="text"
-                            size="sm"
-                            v-model="component.description"
-                            required
-                            placeholder="请输入构件描述" />
-                    </b-form-group>
-                    <b-form-group   
-                            id="versionGroup"
-                            label="版本:"
-                            label-for="version"
-                            label-size="sm"
-                    >
-                        <b-form-input
-                            id="version"
-                            type="text"
-                            size="sm"
-                            v-model="component.version"
-                            required
-                            placeholder="请输入构件版本" />
-                    </b-form-group>
-                    <b-form-group   
-                            id="authorGroup"
-                            label="作者:"
-                            label-for="author"
-                            label-size="sm"
-                    >
-                        <b-form-input
-                            id="author"
-                            type="text"
-                            size="sm"
-                            v-model="component.author"
-                            required
-                            placeholder="请输入构件作者" />
-                    </b-form-group>
-                    <b-form-checkbox
-                        id="isExtendsAbstractEntity"
-                        name="isExtendsAbstractEntity"
-                        v-model="component.isExtendsAbstractEntity"
-                        value="true"
-                        size="sm"
-                        unchecked-value="false"
-                    >
-                    是否继承基础对象
-                    </b-form-checkbox>
+                    <div class="form-group row">
+                        <label for="simpleName" class="col-sm-3 col-form-label-sm">构件名称:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control col-form-label-sm" id="simpleName" placeholder="请输入构件名称" 
+                            v-model = "component.simpleName" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="basePackageName" class="col-sm-3 col-form-label-sm">构件路径:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control col-form-label-sm" id="basePackageName" placeholder="请输入构件名称" 
+                            v-model = "component.basePackageName" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="description" class="col-sm-3 col-form-label-sm">描述:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control col-form-label-sm" id="description" placeholder="请输入描述" 
+                            v-model = "component.description" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="version" class="col-sm-3 col-form-label-sm">版本:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control col-form-label-sm" id="version" placeholder="请输入版本" 
+                            v-model = "component.version" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="author" class="col-sm-3 col-form-label-sm">作者:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control col-form-label-sm" id="author" placeholder="请输入作者" 
+                            v-model = "component.author" required>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="isExtendsAbstractEntity" class="col-sm-4 col-form-label-sm">继承基础对象:</label>
+                        <div class="col-sm-8">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="isExtendsAbstractEntity" v-model = "component.isExtendsAbstractEntity">
+                            </div>
+                        </div>
+                    </div>
                 </b-form>
             </b-tab>
             <b-tab title="构件持久化配置">
                 <b-form @submit.prevent>
-                    <label label-for="inheritanceStrategy"
-                            label-size="sm"
-                    >请选择继承策略</label>
-                    <b-form-select 
-                    id = "inheritanceStrategy"
-                    v-model="component.inheritanceStrategy"
-                    :select-size="3" 
-                    value="options[0]"
-                    size="sm"
-                    :options="options"/>
-                    <b-form-group   
-                            id="tablePrefixGroup"
-                            label="表名前缀:"
-                            label-for="tablePrefix"
-                            label-size="sm"
-                    >
-                        <b-form-input
-                            id="author"
-                            type="text"
-                            size="sm"
-                            v-model="component.tablePrefix"
-                            required
-                            placeholder="请输入表名前缀" />
-                    </b-form-group>
+                    <div class="form-group row">
+                        <label for="inheritanceStrategy" class="col-sm-3 col-form-label-sm">继承策略:</label>
+                        <div class="col-sm-9">
+                            <b-select id="inheritanceStrategy" :options="options" value="options[0]" :select-size="3" 
+                            v-model = "component.inheritanceStrategy" class="form-control col-form-label-sm"></b-select>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="tablePrefix" class="col-sm-3 col-form-label-sm">表名前缀:</label>
+                        <div class="col-sm-9">
+                            <input type="text" class="form-control col-form-label-sm" id="tablePrefix" placeholder="请输入表名前缀" 
+                            v-model = "component.tablePrefix" required>
+                        </div>
+                    </div>
                 </b-form>
             </b-tab>
         </b-tabs>

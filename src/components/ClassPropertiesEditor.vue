@@ -12,7 +12,7 @@
         <b-table striped  responsive :small=true :bordered=true hover :items="editClass.attributes" :fields="attributeFields" class="my-table"
             ref="attributesTable" @row-clicked = "showAttributeDetail" head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm"
             >
-                    <!-- A virtual column -->
+                <!-- A virtual column -->
                 <template slot="index" slot-scope="row">
                     {{ row.index + 1 }}
                 </template>
@@ -70,10 +70,10 @@
                     <AnnotationsEditor :mainClass = "currentAttribute"/>
                 </b-tab>
                 <b-tab title="枚举" >
-
+                    <EnumEditor :editAttribute = "currentAttribute"/>
                 </b-tab>
                 <b-tab title="校验" >
-                    
+                    <AttrValidateEditor :editAttribute = "currentAttribute"/>
                 </b-tab>
             </b-tabs>
         </b-card>
@@ -81,6 +81,8 @@
 </template>
 <script>
 import AnnotationsEditor from '@/components/AnnotationsEditor';
+import EnumEditor from '@/components/EnumEditor';
+import AttrValidateEditor from '@/components/AttrValidateEditor';
 let currentAttribute;
 let currentAttributeIdx=-1;
 let isShowAttributeProperties=false;
@@ -108,7 +110,7 @@ export default {
                 isPrimary: false,
                 isCharSpec: false,
                 annotations:[],
-                attrEnum:{}
+                attrEnum:null
             };
             this.editClass.attributes.push(newRow);
             this.$refs.attributesTable.refresh();
@@ -127,6 +129,7 @@ export default {
                 if ( this.editClass.attributes[i] === item) {
                     this.editClass.attributes.splice(i, 1);
                     preIdx = i-1;
+                    break;
                 }
             }
             if(preIdx<0){
@@ -217,7 +220,7 @@ export default {
                     label:'操作',
                     sortable: false
                 }
-            ],
+            ],    
             attrTypes:[
                 {value:'String',text:'String'},
                 {value:'Long',text:'Long'},
@@ -237,7 +240,9 @@ export default {
         this.totalRows = this.editClass.attributes.length;
     },
     components: {
-        AnnotationsEditor
+        AnnotationsEditor,
+        EnumEditor,
+        AttrValidateEditor
     }
 }
 </script> 
