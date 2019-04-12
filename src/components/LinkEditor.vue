@@ -4,50 +4,42 @@
             <b-tabs card>
                 <b-tab title="关系信息" active>
                     <b-form @submit.prevent>
-                        <b-form-group
-                            id="sourceRelationNameGroup"
-                            label="起点关系名称:"
-                            label-for="sourceRelationName"
-                            label-size="sm"
-                        >
-                            <b-form-input
-                            id="sourceRelationName"
-                            type="text"
-                            size="sm"
-                            v-model = "linkObj.sourceRelationName"
-                            placeholder="请起点关系名称" />
-                        </b-form-group>
-                        <b-form-group
-                            id="targetRelationNameGroup"
-                            label="终点关系名称:"
-                            label-for="targetRelationName"
-                            label-size="sm"
-                        >
-                            <b-form-input
-                            id="targetRelationName"
-                            type="text"
-                            size="sm"
-                            v-model = "linkObj.targetRelationName"
-                            placeholder="请终点关系名称" />
-                        </b-form-group>
-                        <b-form-group>
-                            <p size="sm">起点({{linkObj.sourceName}}):</p>
-                            <b-form-select 
-                            id = "sourceRoleLabel"
-                            v-model = "linkObj.sourceRoleLabel"
-                            size="sm"
-                            @change="roleLabelChanged"
-                            :options="roleOptions"/>
-                        </b-form-group>
-                        <b-form-group>
-                            <p size="sm">终点({{linkObj.targetName}}):</p>
-                            <b-form-select 
-                            id = "targetRoleLabel"
-                            v-model = "linkObj.targetRoleLabel"
-                            size="sm"
-                            @change="roleLabelChanged"
-                            :options="roleOptions"/>
-                        </b-form-group>
+                        <div class="form-group row">
+                            <label for="sourceRelationName" class="col-sm-4 col-form-label-sm">起点关系名称:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control col-form-label-sm" id="sourceRelationName" placeholder="请输入起点关系名称" 
+                                v-model = "linkObj.sourceRelationName">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="targetRelationName" class="col-sm-4 col-form-label-sm">终点关系名称:</label>
+                            <div class="col-sm-8">
+                                <input type="text" class="form-control col-form-label-sm" id="targetRelationName" placeholder="请输入终点关系名称" 
+                                v-model = "linkObj.targetRelationName">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="sourceRoleLabel" class="col-sm-4 col-form-label-sm">起点({{linkObj.sourceName}}):</label>
+                            <div class="col-sm-8">
+                                <b-form-select 
+                                id = "sourceRoleLabel"
+                                v-model = "linkObj.sourceRoleLabel"
+                                size="sm"
+                                @change="roleLabelChanged"
+                                :options="roleOptions"/>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <label for="targetRoleLabel" class="col-sm-4 col-form-label-sm">终点({{linkObj.targetName}}):</label>
+                            <div class="col-sm-8">
+                                <b-form-select 
+                                id = "targetRoleLabel"
+                                v-model = "linkObj.targetRoleLabel"
+                                size="sm"
+                                @change="roleLabelChanged"
+                                :options="roleOptions"/>
+                            </div>
+                        </div>
                     </b-form>
                 </b-tab>
             </b-tabs>        

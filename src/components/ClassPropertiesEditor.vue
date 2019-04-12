@@ -3,7 +3,7 @@
         <button @click="addAttribute"  title="新增属性">
             <font-awesome-icon icon="plus"/>
         </button>
-        <button @click="importdAttributeFromPdm"  title="从PDM导入属性">
+        <button @click="showImportFromPdm"  title="从PDM导入属性">
             <font-awesome-icon icon="file-powerpoint"/>
         </button>
         <button @click="importdAttributeFromDB" title="从数据库表导入属性">
@@ -60,8 +60,8 @@
                         <div class="form-group row">
                             <label for="attrType" class="col-sm-4 col-form-label-sm">数据类型:</label>
                             <div class="col-sm-8">
-                                <b-select id="attrType" class="col-form-label-sm" :options="attrTypes" @change = "attrTypeChanged"
-                                v-model = "currentAttribute.type"></b-select>
+                                <b-form-select id="attrType" class="col-form-label-sm" :options="attrTypes" @change = "attrTypeChanged"
+                                v-model = "currentAttribute.type"></b-form-select>
                             </div>
                         </div>
                     </form>
@@ -77,15 +77,33 @@
                 </b-tab>
             </b-tabs>
         </b-card>
+        <b-modal id="importPdmDialog"  ref = "importPdmDialog" title="从PDM导入属性" @ok="importPdm">
+            <div class="form-group row">
+                <label for="pdmName" class="col-sm-3 col-form-label-sm">PDM名称:</label>
+                <div class="col-sm-9">
+                    <input type="file" accept=".pdm" class="form-control col-form-label-sm" id="pdmName" placeholder="请选择PDM文件" 
+                    ref="pdmName" @change="pdmFileChanged($event)">
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="tableName" class="col-sm-3 col-form-label-sm">表名:</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control col-form-label-sm" id="tableName" placeholder="请输入表名" 
+                    ref="tableName" >
+                </div>
+            </div>
+        </b-modal>
     </div>
 </template>
 <script>
 import AnnotationsEditor from '@/components/AnnotationsEditor';
 import EnumEditor from '@/components/EnumEditor';
 import AttrValidateEditor from '@/components/AttrValidateEditor';
+import axios from "axios";
 let currentAttribute;
 let currentAttributeIdx=-1;
 let isShowAttributeProperties=false;
+let pdmFile=null;
 export default {
     name:'ClassPropertiesEditor',
     props:['editClass'],
@@ -183,12 +201,75 @@ export default {
             tableBody = myTable.getElementsByTagName('tbody')[0],
             tableRows = tableBody.getElementsByTagName('tr')
             tableRows[index].click();
+        },
+        showImportFromPdm(){
+            this.$refs.importPdmDialog.show();
+        },
+        pdmFileChanged(event){
+            this.pdmFile = event.target.files[0];
+        },
+        importPdm(bvModalEvt){
+            // Prevent modal from closing
+            bvModalEvt.preventDefault()
+            let tableName = this.$refs.tableName.value;
+            if(null==this.pdmFile){
+                alert("请选择PDM文件！");
+                return;
+            }
+            var reader = new FileReader();
+            let _this = this;
+            reader.addEventListener("load", function () {
+                var  pdmContent = reader.result;
+                var aUrl = '/component/importPdmTable/' + tableName;
+                if(pdmContent!=null){
+                    axios({
+                        method: 'post',
+                        baseURL: 'http://localhost:8083',
+                        url: aUrl,
+                        data: pdmContent,
+                        headers: {'Content-Type': 'text/xml'},
+                        responseEncoding: 'utf8', 
+                        responseType: 'json'
+                    }).then(
+                        function (data) {
+                            if (data) {
+                                var attrs = JSON.parse(data);
+                                _.each(attrs,function(attr){
+                                    _this.editClass.attributes.push(attr);
+                                })
+                            }
+                            _this.$refs.importPdmDialog.hide();
+                        }
+                    ).catch(
+                        function(error){
+                            if (error.response) {
+                                // The request was made and the server responded with a status code
+                                // that falls out of the range of 2xx
+                                console.log(error.response.data);
+                                console.log(error.response.status);
+                                console.log(error.response.headers);
+                            } else if (error.request) {
+                                // The request was made but no response was received
+                                // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                                // http.ClientRequest in node.js
+                                console.log(error.request);
+                            } else {
+                                // Something happened in setting up the request that triggered an Error
+                                console.log('Error', error.message);
+                            }
+                            console.log(error.config);
+                        }
+                    );
+                }
+            }, false);
+            reader.readAsText(this.pdmFile);
         }
     },
     data(){
         return{
             isShowAttributeProperties,
             currentAttribute,
+            pdmFile,
             attributeFields: [
                 {
                     key: 'index',
@@ -238,6 +319,9 @@ export default {
             _this.currentAttribute = _currentAttruibute;
         });
         this.totalRows = this.editClass.attributes.length;
+        this.$eventHub.$on('ClassNameChanged',function(currentClass){
+            _this.$refs.attributesTable.refresh();
+        });
     },
     components: {
         AnnotationsEditor,

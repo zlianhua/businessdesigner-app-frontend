@@ -67,43 +67,11 @@
 <script>
 let currentCommandService;
 let _this = this;
+import cellUtil from "../cellUtil.js";
 export default {
     name:'CommandServicesEditor',
     props:['editClass','entityMap','linkMap'],
     methods:{
-        findParentEntity(entityId){
-            for(let[k,v] of this.linkMap){
-                if (v.sourceId==entityId && v.type=="Generalization"){
-                    return this.entityMap.get(v.targetId);
-                }
-            }
-            return null;
-        },
-        findAttributesOfSuper(entityId,attributes,isAddSuperAttr){
-            let parent = this.findParentEntity(entityId);
-            if(parent!=null){
-                attributes=this.findAttributesOfSuper(parent.id,attributes,true);
-            }
-            if(isAddSuperAttr){
-                let entity=this.entityMap.get(entityId);
-                attributes=entity.attributes.concat(attributes);
-            }
-            return attributes;
-        },
-        findRelateEntities(entity,relateEntities){
-            for(let[k,v] of this.linkMap){
-                if (v.targetId==entity.id && (v.type=="Aggregation" || v.type=="Composition")){
-                    let source =this.entityMap.get(v.sourceId);
-                    let relateEntity = {
-                        entity:source,
-                        parentEntity:entity
-                    }
-                    relateEntities.push(relateEntity);
-                    relateEntities = this.findRelateEntities(source,relateEntities);
-                }
-            }
-            return relateEntities;
-        },
         buildParentEntityName(relatesMap,relateEntity,parentEntityName){
             if(relateEntity.parentEntity){
                 let parentRelateEntity = relatesMap.get(relateEntity.parentEntity.name);
@@ -116,7 +84,7 @@ export default {
         addCommandService(){
             var parameters = [];
             var attributes = this.editClass.attributes;
-            attributes = this.findAttributesOfSuper(this.editClass.id,attributes,false);
+            attributes = cellUtil.findAttributesOfSuper(this.editClass.id,attributes,false, this.entityMap ,this.linkMap);
             _.each(attributes, function(attr){
                 if(!attr.isPrimary){
                     var enums=[];
@@ -136,7 +104,7 @@ export default {
                 
             });
             var relateEntities=[];
-            relateEntities = this.findRelateEntities(this.editClass,relateEntities);
+            relateEntities = cellUtil.findRelateEntities(this.editClass,relateEntities, this.entityMap, this.linkMap);
             var relatesMap = new Map();
             for(aRel of relateEntities){
                 relatesMap.set(aRel.entity.name,aRel);
@@ -179,7 +147,6 @@ export default {
             }
             this.editClass.commandServices.push(method);
             this.$refs.commandServicesTable.refresh();
-            this.currentCommandService = null;
             this.currentCommandService = method;
             this.$eventHub.$emit ('serviceChanged',this.editClass);
         },
@@ -209,8 +176,20 @@ export default {
             }
         },
         commandServiceNameChanged(item,event){
-            let serviceName = event.target.value;
             this.currentCommandService=item;
+            let serviceName = event.target.value;
+            let hasSameName=false;
+            for(let service of this.editClass.commandServices){
+                if(service.name.trim() === serviceName){
+                    alert("服务【"+serviceName+"】已经存在，请更改！");
+                    hasSameName = true;
+                    break;
+                }
+            }
+            if(hasSameName){
+                event.target.value = item.name;
+                return;
+            }
             this.currentCommandService.name = serviceName;
             if(null==this.currentCommandService.eventName || this.currentCommandService.eventName==""){
                 let captilizedName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);

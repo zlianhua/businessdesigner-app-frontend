@@ -197,13 +197,12 @@ export default {
         },
         resizeClassCell(cell){
             let newHeight = 0;
-            if(cell.attributes){
-                newHeight = newHeight + cell.attributes.attributes.length;
+            if(cell.attributes.attributes){
+                newHeight = newHeight + cell.attributes.attributes.length*18;
             }
-            if(cell.methods){
-                newHeight = newHeight + cell.attributes.methods.length;
+            if(cell.attributes.methods){
+                newHeight = newHeight + cell.attributes.methods.length*18;
             }
-            newHeight = 14*newHeight;
             if(newHeight<100){
                 newHeight = 100;
             }
@@ -536,15 +535,15 @@ export default {
                 let queryServices = currentClass.queryServices;
                 _.each(commandServices,function(commandService){
                     var methodName = commandService.name;
-                    if(methodName.length>30){
-                        methodName = methodName.substr(0,30)+"...";
+                    if(methodName.length>23){
+                        methodName = methodName.substr(0,23)+"...";
                     }
                     methods.push(methodName);
                 });
                 _.each(queryServices,function(queryService){
                     var methodName = queryService.name;
-                    if(methodName.length>30){
-                        methodName = methodName.substr(0,30)+"...";
+                    if(methodName.length>23){
+                        methodName = methodName.substr(0,23)+"...";
                     }
                     methods.push(methodName);
                 });

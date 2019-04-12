@@ -53,8 +53,8 @@
                     <div class="form-group row">
                         <label for="inheritanceStrategy" class="col-sm-3 col-form-label-sm">继承策略:</label>
                         <div class="col-sm-9">
-                            <b-select id="inheritanceStrategy" :options="options" value="options[0]" :select-size="3" 
-                            v-model = "component.inheritanceStrategy" class="form-control col-form-label-sm"></b-select>
+                            <b-form-select id="inheritanceStrategy" :options="options" :select-size="3" 
+                            v-model = "component.inheritanceStrategy" class="form-control col-form-label-sm"></b-form-select>
                         </div>
                     </div>
                     <div class="form-group row">

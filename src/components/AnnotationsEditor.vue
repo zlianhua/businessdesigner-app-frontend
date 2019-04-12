@@ -4,7 +4,7 @@
             <font-awesome-icon icon="plus"/>
         </button>
         <b-table responsive :small=true :bordered=true hover :items="mainClass.annotations" :fields="annotaionFields" 
-        ref="annotaionsTable">
+        ref="annotaionsTable" class="my-table">
             <template slot="annotation" slot-scope="data">
                 <b-form-input id ="data.key" size="sm" v-model="data.value" type="text" required placeholder="请输入注解" @change="setAnnotation(data)"/>
             </template> 
@@ -54,4 +54,10 @@ export default {
     }
 }
 </script>
+<style>
+.my-table {
+  max-height: 200px;
+  overflow-y: auto;
+}
+</style>
 

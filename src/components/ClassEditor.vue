@@ -6,21 +6,21 @@
                     <form @submit.prevent>
                         <div class="form-group row">
                             <label for="entityName" class="col-sm-3 col-form-label-sm">名称:</label>
-                            <div class="col-sm-8">
+                            <div class="col-sm-9">
                                 <input type="text" class="form-control col-form-label-sm" id="entityName" placeholder="请输入对象名称" 
-                                v-model = "editClass.entityName" @change = "emitNameChanged" required>
+                                :value = "editClass.entityName" @change = "nameChanged($event)" required>
                             </div>
                         </div>
                         <div class="form-group row">
                             <label for="description" class="col-sm-3 col-form-label-sm">描述:</label>
-                            <div class="col-sm-8">
+                            <div class="col-sm-9">
                                 <input type="text" class="form-control col-form-label-sm" id="description" placeholder="请输入对象描述" 
                                 v-model = "editClass.description" required>
                             </div>
                         </div>
                        <div class="form-group row">
                             <div class="col-sm-3 col-form-label-sm">是否根对象:</div>
-                            <div class="col-sm-8">
+                            <div class="col-sm-9">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="isRootEntity" v-model = "editClass.isRootEntity">
                                 </div>
@@ -38,7 +38,7 @@
                     <CommandServicesEditor :editClass = "editClass" :entityMap="entityMap" :linkMap="linkMap"/>
                 </b-tab>
                 <b-tab title="查询服务">
-                    <!-- <AnnotationsEditor :mainClass = "editClass"/> -->
+                   <QueryServicesEditor :editClass = "editClass" :entityMap="entityMap" :linkMap="linkMap"/>
                 </b-tab>
             </b-tabs>        
         </b-card>
@@ -48,19 +48,80 @@
 import ClassPropertiesEditor from '@/components/ClassPropertiesEditor';
 import AnnotationsEditor from '@/components/AnnotationsEditor';
 import CommandServicesEditor from '@/components/CommandServicesEditor';
+import QueryServicesEditor from '@/components/QueryServicesEditor';
 import { constants } from 'fs';
 export default {
     name:'ClassEditor',
     props:['editClass','entityMap','linkMap'],
     methods: {
-        emitNameChanged(){
+        nameChanged(event){
+            let pkIdx=0;
+            let primaryAttr = this.editClass.attributes.find(function(e1){
+                if(e1.isPrimary){
+                    return e1;
+                }
+                pkIdx++;
+            });
+            let isGeneralizationSource=false;
+            for(let[k,v] of this.linkMap){
+                if (v.sourceId==this.editClass.id && v.type=="Generalization"){
+                    isGeneralizationSource =true;
+                    if(null!=primaryAttr) {
+                        this.attrRows.splice(pkIdx);
+                    }
+                    return isGeneralizationSource;
+                }
+            }
+            if(isGeneralizationSource){
+                return;
+            }
+            let newName=event.target.value;
+            let oldValue = this.editClass.entityName;
+            let oldKeyName = oldValue.charAt(0).toLowerCase()+oldValue.substr(1)+"Id";
+            let oldAttr = this.editClass.attributes.find(function(e1){
+                if(e1.name==oldKeyName){
+                    return e1;
+                }
+            });
+            if(oldAttr){
+                this.editClass.attributes.splice(this.editClass.attributes.indexOf(oldAttr),1);
+            }
+
+            let newKeyName = newName.charAt(0).toLowerCase()+newName.substr(1)+"Id";
+            let existNewKey = false;
+            existNewKey = this.editClass.attributes.find(function(e1){
+                if(e1.name==newKeyName){
+                    return true;
+                }
+            });
+            this.editClass.entityName = newName;
+            if(!existNewKey){
+                let newRow = {
+                    name: newKeyName,
+                    type: "Long",
+                    description: "",
+                    attrValidate:{
+                        valueFrom: "",
+                        valueTo: "",
+                        interval: "",
+                        formula: "",
+                        isCustomized: false
+                    },
+                    isPrimary: true,
+                    isCharSpec: false,
+                    annotations:[],
+                    attrEnum:{}
+                };
+                this.editClass.attributes.unshift(newRow);
+            }
             this.$eventHub.$emit ('ClassNameChanged',this.editClass);
         }
     },
     components: {
         ClassPropertiesEditor,
         AnnotationsEditor,
-        CommandServicesEditor
+        CommandServicesEditor,
+        QueryServicesEditor
     }
 }
 </script>
