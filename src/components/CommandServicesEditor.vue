@@ -6,7 +6,8 @@
         <b-table striped  responsive :small=true :bordered=true :items="editClass.commandServices" :fields="commandServiceFields" class="my-table"
         ref="commandServicesTable" @row-clicked = "showCommandServiceDetail" head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm">
             <template slot="name" slot-scope="row">
-                <input type="text" class="form-control col-form-label-sm" :value = "row.item.name" @change="commandServiceNameChanged(row.item,$event)">
+                <input type="text" class="form-control col-form-label-sm" :value = "row.item.name" @change="commandServiceNameChanged(row.item,$event)"
+                @click="showCommandServiceDetail(row.item)">
             </template>
             <template slot="publishEvent" slot-scope="row">
                 <b-form-checkbox
@@ -16,7 +17,8 @@
                 />
             </template>
             <template slot="eventName" slot-scope="row">
-                <input type="text" class="form-control col-form-label-sm" :value = "row.item.eventName" v-if="row.item.publishEvent==true" @change="commandServiceEventNameChanged(row.item,$event)">
+                <input type="text" class="form-control col-form-label-sm" :value = "row.item.eventName" v-if="row.item.publishEvent==true"
+                 @change="commandServiceEventNameChanged(row.item,$event)" @click="showCommandServiceDetail(row.item)">
             </template>
             <template slot="actions" slot-scope="row">
                 <button @click="deleteCommandService(row.index)">
@@ -66,79 +68,13 @@
 </template>
 <script>
 let currentCommandService;
-let _this = this;
 import cellUtil from "../cellUtil.js";
 export default {
     name:'CommandServicesEditor',
     props:['editClass','entityMap','linkMap'],
     methods:{
-        buildParentEntityName(relatesMap,relateEntity,parentEntityName){
-            if(relateEntity.parentEntity){
-                let parentRelateEntity = relatesMap.get(relateEntity.parentEntity.name);
-                if(parentRelateEntity){
-                    return this.buildParentEntityName(relatesMap,parentRelateEntity,parentEntityName);
-                }
-                return relateEntity.parentEntity.name+"."+parentEntityName;
-            }
-        },
         addCommandService(){
-            var parameters = [];
-            var attributes = this.editClass.attributes;
-            attributes = cellUtil.findAttributesOfSuper(this.editClass.id,attributes,false, this.entityMap ,this.linkMap);
-            _.each(attributes, function(attr){
-                if(!attr.isPrimary){
-                    var enums=[];
-                    if(attr.attrEnum){
-                        enums = attr.attrEnum.enums;
-                    }
-                    var parameter={
-                        isParameter:true,
-                        relateName:"",
-                        name:attr.name,
-                        valueFrom:"",
-                        value:"",
-                        enums:enums
-                    }
-                    parameters.push(parameter);
-                }
-                
-            });
-            var relateEntities=[];
-            relateEntities = cellUtil.findRelateEntities(this.editClass,relateEntities, this.entityMap, this.linkMap);
-            var relatesMap = new Map();
-            for(aRel of relateEntities){
-                relatesMap.set(aRel.entity.name,aRel);
-            }
-            for(relatEntity of relateEntities){
-                var parentEntityName="";
-                if(relatEntity.parentEntity){
-                    parentEntityName=this.buildParentEntityName(relatesMap,relatEntity,parentEntityName);
-                }
-                if(parentEntityName && parentEntityName!="" && !parentEntityName.endsWith(".")){
-                    parentEntityName+=".";
-                }
-                for(attr of relatEntity.entity.attributes){
-                    if(attr.isPrimary){
-                        continue;
-                    }
-                    if(attr.name && attr.name!=""){
-                        var relateName=parentEntityName+relatEntity.entity.name+"."+attr.name;
-                        var enums=[];
-                        if(attr.attrEnum){
-                            enums = attr.attrEnum.enums;
-                        }
-                        var parameter={
-                            isParameter:true,
-                            relateName:relateName,
-                            name:attr.name,
-                            valueFrom:"",
-                            value:"",
-                            enums:enums
-                        }
-                        parameters.push(parameter);
-                    }
-                }
-            }
+            let parameters = cellUtil.createParameters(this.editClass, this.entityMap, this.linkMap);
             var method={
                 name:"",
                 publishEvent:false,
@@ -161,8 +97,7 @@ export default {
                 this.currentCommandService = this.editClass.commandServices[newIdx];
             }
         },
-        showCommandServiceDetail(commandService,index){
-            this.currentCommandService = null;
+        showCommandServiceDetail(commandService){
             this.currentCommandService = commandService;
         },
         commandServiceEventNameChanged(item,event){
@@ -261,7 +196,17 @@ export default {
                 }
             ]
         }
-    }
+    },
+    mounted(){
+        let _this = this;
+        this.$eventHub.$on('restoreCommandServices',function(entity){
+            console.log('comm');
+            _this.restoreCommandServices(entity);
+        });
+    },
+    beforeDestroy(){
+        this.$eventHub.$off('restoreCommandServices');
+    },
 }
 </script>
 <style>

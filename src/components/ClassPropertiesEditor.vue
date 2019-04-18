@@ -6,7 +6,7 @@
         <button @click="showImportFromPdm"  title="从PDM导入属性">
             <font-awesome-icon icon="file-powerpoint"/>
         </button>
-        <button @click="importdAttributeFromDB" title="从数据库表导入属性">
+        <button @click="showImportFromDbTable" title="从数据库表导入属性">
             <font-awesome-icon icon="database" />
         </button>
         <b-table striped  responsive :small=true :bordered=true hover :items="editClass.attributes" :fields="attributeFields" class="my-table"
@@ -88,8 +88,38 @@
             <div class="form-group row">
                 <label for="tableName" class="col-sm-3 col-form-label-sm">表名:</label>
                 <div class="col-sm-9">
-                    <input type="text" class="form-control col-form-label-sm" id="tableName" placeholder="请输入表名" 
+                    <input type="text" class="form-control col-form-label-sm" id="tableName" placeholder="请输入要导入的表名" 
                     ref="tableName" >
+                </div>
+            </div>
+        </b-modal>
+        <b-modal id="importDBDialog"  ref = "importDBDialog" title="从数据库表导入属性" @ok="importDbTable">
+            <div class="form-group row">
+                <label for="url" class="col-sm-3 col-form-label-sm">Url:</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control col-form-label-sm" id="url" placeholder="请输入连接数据库的Url" 
+                    ref="url" >
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="user" class="col-sm-3 col-form-label-sm">用户名:</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control col-form-label-sm" id="user" placeholder="请输入连接数据库的用户名" 
+                    ref="user" >
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="password" class="col-sm-3 col-form-label-sm">密码:</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control col-form-label-sm" id="password" placeholder="请输入连接数据库的密码" 
+                    ref="password" >
+                </div>
+            </div>
+            <div class="form-group row">
+                <label for="tableName" class="col-sm-3 col-form-label-sm">表名:</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control col-form-label-sm" id="tableName" placeholder="请输入要导入的表名" 
+                    ref="dbTableName" >
                 </div>
             </div>
         </b-modal>
@@ -134,12 +164,6 @@ export default {
             this.$refs.attributesTable.refresh();
             let _this=this;
             setTimeout(function(){_this.clickAttributeTableRow(_this.editClass.attributes.length-1)},20);
-        },
-        importdAttributeFromPdm(){
-
-        },
-        importdAttributeFromDB(){
-
         },
         deleteAttribute(item){
             let preIdx=0;
@@ -205,6 +229,9 @@ export default {
         showImportFromPdm(){
             this.$refs.importPdmDialog.show();
         },
+        showImportFromDbTable(){
+            this.$refs.importDBDialog.show();
+        },
         pdmFileChanged(event){
             this.pdmFile = event.target.files[0];
         },
@@ -216,11 +243,11 @@ export default {
                 alert("请选择PDM文件！");
                 return;
             }
-            var reader = new FileReader();
+            let reader = new FileReader();
             let _this = this;
             reader.addEventListener("load", function () {
-                var  pdmContent = reader.result;
-                var aUrl = '/component/importPdmTable/' + tableName;
+                let  pdmContent = reader.result;
+                let aUrl = '/component/importPdmTable/' + tableName;
                 if(pdmContent!=null){
                     axios({
                         method: 'post',
@@ -231,14 +258,32 @@ export default {
                         responseEncoding: 'utf8', 
                         responseType: 'json'
                     }).then(
-                        function (data) {
-                            if (data) {
-                                var attrs = JSON.parse(data);
+                        function (returnValue) {
+                            if (returnValue) {
+                                let attrs= returnValue.data;
                                 _.each(attrs,function(attr){
-                                    _this.editClass.attributes.push(attr);
+                                    let newRow = {
+                                        name: attr.name,
+                                        type: attr.type,
+                                        attrValidate:{
+                                            valueFrom: "",
+                                            valueTo: "",
+                                            interval: "",
+                                            formula: "",
+                                            isCustomized: false
+                                        },
+                                        description: attr.description,
+                                        isPrimary: false,
+                                        isCharSpec: false,
+                                        annotations:[],
+                                        attrEnum:null
+                                    };
+                                    _this.editClass.attributes.push(newRow);
                                 })
                             }
                             _this.$refs.importPdmDialog.hide();
+                            _this.$refs.attributesTable.refresh();
+                            _this.$eventHub.$emit ('AttributesChanged',_this.editClass);
                         }
                     ).catch(
                         function(error){
@@ -257,12 +302,96 @@ export default {
                                 // Something happened in setting up the request that triggered an Error
                                 console.log('Error', error.message);
                             }
-                            console.log(error.config);
+                            alert(error.message);
                         }
                     );
                 }
             }, false);
             reader.readAsText(this.pdmFile);
+        },
+        importDbTable(bvModalEvt){
+            // Prevent modal from closing
+            bvModalEvt.preventDefault()
+            let url = this.$refs.url.value;
+            let user = this.$refs.user.value;
+            let password = this.$refs.password.value;
+            let tableName = this.$refs.dbTableName.value;
+            if(null==url){
+                alert("请输入Url！");
+                return;
+            }
+            if(null==user){
+                alert("请输入user！");
+                return;
+            }
+            if(null==password){
+                alert("请输入password！");
+                return;
+            }
+            if(null==tableName){
+                alert("请输入tableName！");
+                return;
+            }
+            let data = {url:url,user:user,password:password,tableName:tableName};
+            let dataString = JSON.stringify(data);
+            let aUrl = '/component/importDBTable';
+            let _this=this;
+            axios({
+                method: 'post',
+                baseURL: 'http://localhost:8083',
+                url: aUrl,
+                data: dataString,
+                headers: {'Content-Type': 'application/json'},
+                responseEncoding: 'utf8', 
+                responseType: 'json'
+            }).then(
+                function (returnValue) {
+                    if (returnValue) {
+                        let attrs= returnValue.data;
+                        _.each(attrs,function(attr){
+                            let newRow = {
+                                name: attr.name,
+                                type: attr.type,
+                                attrValidate:{
+                                    valueFrom: "",
+                                    valueTo: "",
+                                    interval: "",
+                                    formula: "",
+                                    isCustomized: false
+                                },
+                                description: attr.description,
+                                isPrimary: false,
+                                isCharSpec: false,
+                                annotations:[],
+                                attrEnum:null
+                            };
+                            _this.editClass.attributes.push(newRow);
+                        })
+                    }
+                    _this.$refs.importDBDialog.hide();
+                    _this.$refs.attributesTable.refresh();
+                    _this.$eventHub.$emit ('AttributesChanged',_this.editClass);
+                }
+            ).catch(
+                function(error){
+                    if (error.response) {
+                        // The request was made and the server responded with a status code
+                        // that falls out of the range of 2xx
+                        console.log(error.response.data);
+                        console.log(error.response.status);
+                        console.log(error.response.headers);
+                    } else if (error.request) {
+                        // The request was made but no response was received
+                        // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
+                        // http.ClientRequest in node.js
+                        console.log(error.request);
+                    } else {
+                        // Something happened in setting up the request that triggered an Error
+                        console.log('Error', error.message);
+                    }
+                    alert(error.message);
+                }
+            );
         }
     },
     data(){
@@ -321,6 +450,10 @@ export default {
         this.totalRows = this.editClass.attributes.length;
         this.$eventHub.$on('ClassNameChanged',function(currentClass){
             _this.$refs.attributesTable.refresh();
+        });
+        this.$eventHub.$on('restoreEntitiesServices',function(param){
+            console.log("111");
+            _this.restoreEntitiesServices(param);
         });
     },
     components: {

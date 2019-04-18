@@ -1,14 +1,14 @@
 <template>
     <div>
-        <b-card no-body bg-variant="light" class="col-form-label-sm">
+        <b-card no-body bg-variant="light" class="col-form-label-sm" small card>
             <b-tabs card>
                 <b-tab title="基本信息" active>
                     <form @submit.prevent>
                         <div class="form-group row">
-                            <label for="entityName" class="col-sm-3 col-form-label-sm">名称:</label>
+                            <label for="name" class="col-sm-3 col-form-label-sm">名称:</label>
                             <div class="col-sm-9">
-                                <input type="text" class="form-control col-form-label-sm" id="entityName" placeholder="请输入对象名称" 
-                                :value = "editClass.entityName" @change = "nameChanged($event)" required>
+                                <input type="text" class="form-control col-form-label-sm" id="name" placeholder="请输入对象名称" 
+                                :value = "editClass.name" @change = "nameChanged($event)" required>
                             </div>
                         </div>
                         <div class="form-group row">

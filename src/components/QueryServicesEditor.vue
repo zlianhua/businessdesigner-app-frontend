@@ -4,7 +4,7 @@
             <font-awesome-icon icon="plus"/>
         </button>
         <b-table striped  responsive :small=true :bordered=true :items="editClass.queryServices" :fields="queryServiceFields" class="my-table"
-        ref="queryServicesTable" @row-clicked = "showQueryServiceDetail" head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm">
+        ref="queryServicesTable" @row-clicked = "showQueryServiceDetail" head-letiant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm">
             <template slot="name" slot-scope="row">
                 <input type="text" class="form-control col-form-label-sm" :value = "row.item.name" @change="queryServiceNameChanged(row.item,$event)"
                 placeholder="请选择查询参数以完成服务配置" disabled>
@@ -18,14 +18,14 @@
         <br>
         <div v-if="currentQueryService!=null">
             <b-table striped  responsive :small=true :bordered=true :items="currentQueryService.parameters" :fields="parameterFields"
-             head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="my-table" >
+             head-letiant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="my-table" >
                 <template slot="name" slot-scope="row">
                     <label class="form-control col-form-label-sm">{{row.item.name}}</label>
                 </template>
                 <template slot="isParameter" slot-scope="row">
                     <b-form-checkbox
                         v-model = "row.item.isParameter"
-                        size="sm" @change="refreshQueryServiceName(row.item.name)"
+                        size="sm" @change="refreshQueryServiceName(row.item)"
                     />
                 </template>
                 <template slot="condition" slot-scope="row">
@@ -62,13 +62,11 @@
                     </div>
                 </template>
                 <template slot="sort" slot-scope="row">
-                    <div v-if="row.item.isParameter">
-                        <select v-model="row.item.sort" class="form-control col-form-label-sm" @change="refreshQueryServiceName">
-                            <option></option>
-                            <option>Desc</option>
-                            <option>Asc</option>
-                        </select>
-                    </div>
+                    <select v-model="row.item.sort" class="form-control col-form-label-sm" @change="refreshQueryServiceName">
+                        <option></option>
+                        <option>Desc</option>
+                        <option>Asc</option>
+                    </select>
                 </template>
             </b-table>
         </div>
@@ -91,7 +89,7 @@ export default {
                     attr.type = attr.attrEnum.dataType;
                 }
                 if(attr.name && attr.name!=""){
-                    var parameter={
+                    let parameter={
                         name:attr.name,
                         type:attr.type,
                         isParameter:false,
@@ -102,7 +100,7 @@ export default {
                     parameters.push(parameter);
                 }
             }
-            var method={
+            let method={
                 name:"",
                 parameters:parameters
             }
@@ -114,7 +112,8 @@ export default {
             item.condition = event.target.value;
             this.refreshQueryServiceName();
         },
-        refreshQueryServiceName: function(clickedParameterName){
+        refreshQueryServiceName: function(item){
+            let clickedParameterName = item.name;
             if(this.currentQueryService.parameters.length>0){
                 let methodNameString ="";
                 let paramString="";
@@ -128,20 +127,20 @@ export default {
                     }
                     if(parameter.isParameter){
                         methodNameString+=cName;
-                        if(paramString!=""){
+                        if(paramString && paramString!=""){
                             paramString+=",";
                         }
                         paramString+=parameter.type+" "+ parameter.name;
-                        if(parameter.condition!=""){
+                        if(parameter.condition && parameter.condition!=""){
                             methodNameString+=parameter.condition;
                         }
                         if(count<this.currentQueryService.parameters.length-1){
-                            if(parameter.relation!=""){
+                            if(parameter.relation && parameter.relation!=""){
                                 methodNameString+=parameter.relation;
                             }
                         }
                     }
-                    if(parameter.sort!=""){
+                    if(parameter.sort && parameter.sort!=""){
                         sortString+=cName+parameter.sort;
                     }
                     count++;
@@ -166,11 +165,14 @@ export default {
                 if(paramString!=""){
                     this.currentQueryService.name+="("+paramString+")";
                 }
+                let aCount = 0
                 for(let service of this.editClass.queryServices){
                     if(service.name.trim() === this.currentQueryService.name){
-                        alert("服务【"+this.currentQueryService.name+"】已经存在，请更改！");
-                        break;
+                        aCount ++;
                     }
+                }
+                if(aCount > 1){
+                    alert("服务【"+this.currentQueryService.name+"】已经存在，请更改！");
                 }
             }
             this.$eventHub.$emit ('serviceChanged',this.editClass);
@@ -189,6 +191,15 @@ export default {
         showQueryServiceDetail(queryService,index){
             this.currentQueryService = queryService;
         }  
+    },
+    created(){
+        let _this = this;
+        this.$eventHub.$on('restoreQueryServices',function(param){
+            _this.restoreQueryServices(param);
+        })
+    },
+    beforeDestroy(){
+        this.$eventHub.$off('restoreQueryServices-name');
     },
     data(){
         return{

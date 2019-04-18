@@ -20,6 +20,7 @@ let editLinkObj=null;
 import ComponentPropertyEditor from '@/components/ComponentPropertyEditor';
 import ClassEditor from '@/components/ClassEditor';
 import LinkEditor from '@/components/LinkEditor';
+import cellUtil from "../cellUtil.js";
 export default {
   name: 'ComponentEditor',
   props:['entityMap','linkMap'],
@@ -51,7 +52,7 @@ export default {
         this.isShowLinkProperties = true;
         this.editLinkObj = currentLinkObj;
     }
-  },
+  }, 
   mounted(){
     var _this=this;
     this.$eventHub.$on('showComponentProperties', this.showComponentProperties);
