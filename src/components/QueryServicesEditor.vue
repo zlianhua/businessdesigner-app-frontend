@@ -1,13 +1,14 @@
 <template>
     <div>
-        <button @click="addQueryService"  title="新增命令服务">
+        <button @click="addQueryService"  title="新增查询服务">
             <font-awesome-icon icon="plus"/>
         </button>
-        <b-table striped  responsive :small=true :bordered=true :items="editClass.queryServices" :fields="queryServiceFields" class="my-table"
+        <b-table striped responsive :small=true :bordered=true :items="editClass.queryServices" :fields="queryServiceFields" class="my-table"
         ref="queryServicesTable" @row-clicked = "showQueryServiceDetail" head-letiant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm">
             <template slot="name" slot-scope="row">
-                <input type="text" class="form-control col-form-label-sm" :value = "row.item.name" @change="queryServiceNameChanged(row.item,$event)"
-                placeholder="请选择查询参数以完成服务配置" disabled>
+                <span tabindex="0" data-toggle="tooltip" :title="row.item.name" style="white-space:nowrap">
+                    <label class="form-control col-form-label-sm" nowrap>{{row.item.name}}</label>
+                </span>
             </template>
             <template slot="actions" slot-scope="row">
                 <button @click="deleteQueryService(row.index)">
@@ -17,10 +18,12 @@
         </b-table>
         <br>
         <div v-if="currentQueryService!=null">
-            <b-table striped  responsive :small=true :bordered=true :items="currentQueryService.parameters" :fields="parameterFields"
-             head-letiant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="my-table" >
+            <b-table striped fixed responsive :small=true :bordered=true :items="currentQueryService.parameters" :fields="parameterFields"
+             head-letiant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="param-table" >
                 <template slot="name" slot-scope="row">
-                    <label class="form-control col-form-label-sm">{{row.item.name}}</label>
+                    <span tabindex="0" data-toggle="tooltip" :title="row.item.name">
+                        <label class="form-control col-form-label-sm">{{row.item.name}}</label>
+                    </span>
                 </template>
                 <template slot="isParameter" slot-scope="row">
                     <b-form-checkbox
@@ -207,7 +210,7 @@ export default {
             queryServiceFields: [
                 {
                     key: 'name',
-                    label:'查询服务名称',
+                    label:'请编辑参数生成名称',
                     sortable: true
                 },
                 {
@@ -276,12 +279,16 @@ export default {
             ],
             blankConditionOptions:[]
         }
-    }  
+    }
 }
 </script>
 <style>
 .my-table {
   max-height: 200px;
+  overflow-y: auto;
+}
+.param-table {
+  max-height: 300px;
   overflow-y: auto;
 }
 </style>

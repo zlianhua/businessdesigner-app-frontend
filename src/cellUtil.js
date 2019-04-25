@@ -139,13 +139,19 @@ export default {
       });
     }
   },
-  restoreQueryServices(newEntity, queryServices, entityMap, linkMap){
+  restoreQueryServices(newEntity, entityMap, linkMap){
     let attributes = newEntity.attributes;
+    let queryServiceNames = [];
+    _.each(newEntity.queryServices, function(aQueryServiceName){
+      queryServiceNames.push(aQueryServiceName);
+    });
     attributes = this.findAttributesOfSuper(newEntity.id, attributes, false, entityMap, linkMap);
-    if (queryServices != null && queryServices.length > 0){
+    if (queryServiceNames != null && queryServiceNames.length > 0){
       newEntity.queryServices = [];
-      _.each(queryServices, function(aQueryServiceName){
-        if (aQueryServiceName != null && aQueryServiceName.trim !== ""){
+      for (let queryServiceNameParam of queryServiceNames){
+        if (queryServiceNameParam != null && queryServiceNameParam.trim !== ""){
+          let aQueryServiceName = null;
+          aQueryServiceName = queryServiceNameParam;
           let parametersMap = new Map();
           let queryService = {
             name: aQueryServiceName,
@@ -234,8 +240,7 @@ export default {
           }
           newEntity.queryServices.push(queryService);
         }
-      });
+      }
     }
-    //return newEntity;
   }
 }

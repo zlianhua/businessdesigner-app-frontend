@@ -15,6 +15,7 @@
             <span>|</span>
             <button id="newComponent" @click="newComponent" title="新建构件"><font-awesome-icon icon="file-alt"/></button>
             <button id="save" @click="saveComponent" title="保存构件"> <font-awesome-icon icon="save"/></button>
+            <button id="save" @click="saveAsComponent" title="构件另存为"> <font-awesome-icon icon="share-square"/></button>
             <button id="open" @click="openComponent" title="打开构件"> <font-awesome-icon icon="folder-open"/> </button>
             <button id="delete" @click="deleteComponent" title="删除构件"><font-awesome-icon icon="trash"/></button>
             <button id="getCode" @click="generateJavaCode" title="生成工程代码"><font-awesome-icon icon="coffee"/></button>
@@ -22,8 +23,8 @@
             <button id="zoomOut" @click="zoomOut" title="缩小"><font-awesome-icon icon="search-minus"/></button>
             <button id="resetZoom" @click="resetZoom" title="恢复原大小"><font-awesome-icon icon="search"/></button>
         </div>
-        <div id="divPaperWrapper">
-            <div id="paper" tabindex="0" class="w-100" @keydown="paperOnKeyDown"></div>
+        <div id="paperScrollableWrapper">
+            <div id="paper" tabindex="0"  @keydown="paperOnKeyDown"></div>
         </div>
     </div>
 </template>
@@ -42,6 +43,7 @@ let currentSelectButton = null;
 let currentHighLight = null;
 let currentElementView = null;
 const uml = joint.shapes.uml; 
+let dragStartPosition;
 export default {
     name: 'ComponentCanvas',
     props:['entityMap','linkMap'],
@@ -53,66 +55,27 @@ export default {
     methods:{
         openComponent(){
             let componentName = prompt("请输入构件名称:");
-            let aUrl='/component/open/'+componentName;
             if(!componentName || componentName.indexOf(".")<0){
                 alert("查询构件名称必须包括包名。");
                 return;
             }
-            let _this=this;
-            axios({
-                method: 'GET',
-                baseURL: 'http://localhost:8083',
-                url: aUrl,
-                headers: {'Content-Type': 'application/json'},
-                responseEncoding: 'utf8', 
-                responseType: 'json'
-            }).then(
-                function (returnValue) {
-                    let data = returnValue.data;
-                    if(data){
-                        _this.newComponent();
-                    }
-                    _this.graph.fromJSON(JSON.parse(data.oomXml));
-                    if( data.entities.length>0){
-                        _this.$eventHub.$emit('classSelected',data.entities[0]);
-                    }
-                    let param= {data: data,cells: _this.graph.getCells()};
-                    _this.$eventHub.$emit ('setComponent',param);
-                }
-            ).catch(
-                function(error){
-                    if (error.response) {
-                        // The request was made and the server responded with a status code
-                        // that falls out of the range of 2xx
-                        console.log(error.response.data);
-                        console.log(error.response.status);
-                        console.log(error.response.headers);
-                    } else if (error.request) {
-                        // The request was made but no response was received
-                        // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                        // http.ClientRequest in node.js
-                        console.log(error.request);
-                    } else {
-                        // Something happened in setting up the request that triggered an Error
-                        console.log('Error', error.message);
-                    }
-                    alert(error.message);
-                }
-            ); 
+            this.$eventHub.$emit ('openComponent',componentName,this.graph);
         },
         saveComponent(){
-            this.$eventHub.$emit ('saveComponent');
+            this.$eventHub.$emit ('saveComponent',this.graph);
+        },
+        saveAsComponent(){
+            this.$eventHub.$emit ('saveAsComponent',this.graph);
         },
         newComponent(){
             this.currentSelectButton=null;
             this.currentSelectCell = null;
             this.currentElementView=null;
             this.currentHighLight=null;
-            this.graph.clear();
-            this.$eventHub.$emit ('newComponent');
+            this.$eventHub.$emit ('newComponent',this.graph);
         },
         deleteComponent(){
-            this.$eventHub.$emit ('deleteComponent');
+            this.$eventHub.$emit ('deleteComponent',this.graph);
         },
         generateJavaCode(){
             this.$eventHub.$emit ('generateJavaCode');
@@ -159,7 +122,7 @@ export default {
             for(let [k,v] of this.linkMap){
                 if(v.sourceId==id || v.targetId==id){
                     this.linkMap.delete(k);
-                    var link = findCellById(k);
+                    var link = cellUtil.findCellById(k,this.graph.getCells);
                     link.remove();
                 }
             }
@@ -251,7 +214,9 @@ export default {
                 ]
             });
             var linkView = link.findView(this.paper);
-            linkView.addTools(toolsView);
+            if(linkView){
+                linkView.addTools(toolsView);
+            }
         },
         resizeClassCell(cell){
             let newHeight = 0;
@@ -273,7 +238,7 @@ export default {
         },
         replaceToExternalEntity(entity){
             entity.type="uml.ExternalClass";
-            var oldCell=this.findCellById(entity.id);
+            var oldCell=cellUtil.findCellById(entity.id,this.graph.getCells);
             var newCell=this.drawClass("externalClass",oldCell.attributes.name,oldCell.attributes.position.x,oldCell.attributes.position.y);
             newCell.set("attributes",oldCell.get("attributes"));
             newCell.attributes.size.width=oldCell.attributes.size.width;
@@ -283,7 +248,7 @@ export default {
             for(let [k,v] of this.linkMap) {
                 if (v.targetId == oldId) {
                     v.targetId=newId;
-                    var link = this.findCellById(k);
+                    var link = cellUtil.findCellById(k,this.graph.getCells);
                     link.target({ id:newId});
                 }
             }
@@ -301,6 +266,7 @@ export default {
             gridSize: 10,
             drawGrid: true,
             model: this.graph,
+            // restrictTranslate: true,
             background: {
                 color: 'rgba(0, 255, 0, 0.3)'
             },
@@ -320,18 +286,7 @@ export default {
         });
         this.paper.options.gridSize=10;
         this.paper.drawGrid();
-        this.graph.on("add",function(cell){
-            if(!cell.isLink()){
-                var paperContainer = document.getElementById("paper");
-                var curXPos = cell.attributes.position.x;
-                var maxWidth = curXPos+cell.attributes.size.width;
-                var curYPos = cell.attributes.position.y;
-                var maxHeight =curYPos+cell.attributes.size.height;
-                if(maxWidth>paperContainer.offsetWidth || maxHeight>paperContainer.offsetHeight){
-                    this.zoomOut();
-                }
-            }
-        },this);
+
 
         this.graph.on("remove",function(cell){
             if(cell.isLink()){
@@ -405,6 +360,17 @@ export default {
                 if(currentElementView){
                     currentElementView=null;
                 }
+            },
+            'blank:pointerdown': function(evt,x,y){
+                let scale = V(this.paper.viewport).scale();
+                if(scale){
+                    this.dragStartPosition = { x: x * scale.sx, y: y * scale.sy};
+                }else{
+                    this.dragStartPosition = { x: x, y: y};
+                }
+            },
+            'blank:pointerup': function(evt,x,y){
+                this.dragStartPosition = null;
             },
             'element:pointerdown': function(elementView, evt,x,y) {
                 if(null!=this.currentHighLight){
@@ -492,6 +458,7 @@ export default {
                 evt.data.link.set('target', { x: x, y: y });
             },
             'element:pointerup': function(elementView, evt,x,y){
+                this.dragStartPosition = null;
                 let entity = this.entityMap.get(elementView.model.id);
                 if(entity){
                     this.$eventHub.$emit ('classSelected',entity);
@@ -552,7 +519,7 @@ export default {
                                 }
                                 idx++;
                             });
-                            var sourceCell=this.findCellById(linkObj.sourceId);
+                            var sourceCell=cellUtil.findCellById(linkObj.sourceId,this.graph.getCells());
                             var cellAttrs=sourceCell.get("attributes");
                             if(cellAttrs[idx]){
                                 cellAttrs.splice(idx);
@@ -570,13 +537,13 @@ export default {
 
         let _this = this;
         this.$eventHub.$on('ClassNameChanged',function(currentClass){
-            let entityCell = _this.findCellById(currentClass.id);
+            let entityCell = cellUtil.findCellById(currentClass.id,_this.graph.getCells());
             if(entityCell){
                 entityCell.set("name",currentClass.name);
             }
         });
         this.$eventHub.$on('AttributesChanged',function(currentClass){
-            let entityCell = _this.findCellById(currentClass.id);
+            let entityCell = cellUtil.findCellById(currentClass.id,_this.graph.getCells());
             if(entityCell){
                 let newAttributes=[];
                 _.each(currentClass.attributes,function(attr){
@@ -591,7 +558,7 @@ export default {
             }
         });
         this.$eventHub.$on('roleLabelChanged',function(currentLinkObj){
-            let link = _this.findCellById(currentLinkObj.id);
+            let link = cellUtil.findCellById(currentLinkObj.id,_this.graph.getCells());
             let idx=0;
             if(link){
                 let labels = link.labels();
@@ -635,6 +602,13 @@ export default {
         this.$eventHub.$on('createLinkTool',function(link){
             _this.createLinkTool(link);
         });
+        $("#paper").mousemove(function(event) {
+            if (_this.dragStartPosition){
+              _this.paper.translate(
+                event.offsetX - _this.dragStartPosition.x, 
+                event.offsetY - _this.dragStartPosition.y);
+            }
+        });
     }
 };
 </script>
@@ -650,14 +624,15 @@ span {
     display: inline-block;
     vertical-align: top;
 }
-#paper {
-    border: 1px solid black; 
+#paper-scrollable-wrapper {
+    overflow: visible;
     width: 100%;
     height: 100%;
 }
-#divPaperWrapper {
+
+#paper {
+    border: 1px solid black; 
     width: 600px;
     height: 600px;
-    overflow: auto; 
 }
 </style>

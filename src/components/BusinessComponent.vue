@@ -28,11 +28,13 @@ let component = {
     version: "0.1-snapshot",
     inheritanceStrategy: "TABLE_PER_CLASS",
     tablePrefix: "",
-    extendsAbstractEntity: "false",
+    isExtendsAbstractEntity: "false",
     entities: [],
     associations: [],
     oomXml: ""
 };
+let baseURL = 'http://localhost:8083';
+let oldComponentName = null;
 export default {
     name: 'BusinessComponent',
     methods: {
@@ -61,7 +63,7 @@ export default {
             let _this = this;
             for(let [k,v] of this.entityMap){
                 if(v.type!="uml.ExternalClass" && !v.isRootEntity){
-                    if (!isComponentEntity(v)){
+                    if (!this.isComponentEntity(v)){
                         if(confirm("对象"+v.name+"不直接或间接属于本构件，是否替换为外部对象？")){
                             _this.$eventHub.$emit ('replaceToExternalEntity',v);
                         }else{
@@ -72,7 +74,64 @@ export default {
             }
             return true;
         },
-        saveComponent(){
+        isComponentEntity(entity){
+            for(let [k,v] of this.linkMap){
+                if(v.sourceId==entity.id){
+                    var target = this.entityMap.get(v.targetId);
+                    if(v.type=="Aggregation" || v.type=="Composition"){
+                        if(target.isRootEntity){
+                            return true;
+                        }else{
+                            return this.isComponentEntity(target);
+                        }
+                    }else if(v.type=="Generalization"){
+                        if(target.isRootEntity){
+                            return true;
+                        }else{
+                            return this.isComponentEntity(target);
+                        }
+                    }
+                }
+            }
+            return false;
+        },
+        saveAsComponent(graph){
+            if (!this.component.simpleName){
+                alert("请打开构件!");
+                return;
+            }
+            let newComponentName = prompt("请输入新构件名称：");
+            if(!newComponentName || newComponentName.indexOf(".")<0){
+                alert("构件名称必须包括包名。");
+                return;
+            }
+            let aUrl="/component/saveAs/"+this.component.name+"/"+newComponentName;
+            let _this=this;
+            axios({
+                method: 'POST',
+                baseURL: this.baseURL,
+                url: aUrl,
+                headers: {'Content-Type': 'application/json'},
+                responseEncoding: 'utf8', 
+                responseType: 'text'
+            }).then(
+                function (returnValue) {
+                    let data = returnValue.data;
+                    graph.fromJSON(JSON.parse(data.oomXml));
+                    if( data.entities.length>0){
+                        _this.$eventHub.$emit('classSelected',data.entities[0]);
+                    }
+                    _this.setComponent(data,graph.getCells());
+                    alert(_this.component.simpleName+"构件另存为"+newComponentName+"成功!");
+                }
+            ).catch(
+                function(error){
+                    alert("构件另存失败。原因："+error.response.data);
+                }
+            ); 
+
+        },
+        saveComponent(graph){
             if (!this.component.simpleName){
                 alert("请新建或打开已有组件并编辑后保存!");
                 return;
@@ -83,7 +142,7 @@ export default {
                 if(v.isRootEntity){
                     rootEntityCount++;
                 }
-                this.component.entities[this.component.entities.length] = v;
+                this.component.entities.push(v);
             }
             if(rootEntityCount==0){
                 alert("请设置根对象!")
@@ -93,7 +152,7 @@ export default {
                 return;
             }
 
-            if(!checkEntity()){
+            if(!this.checkEntity()){
                 return;
             }
 
@@ -101,44 +160,62 @@ export default {
             this.component.oomXml =jsonStr;
             this.component.associations=[];
             for(let [k,v] of this.linkMap){
-                this.component.associations[component.associations.length] = v;
+                this.component.associations.push(v);
             };
-            let aUrl="/component/create";
+
+            let aUrl="/component/create/"+this.oldComponentName;
             let _this=this;
             axios({
                 method: 'POST',
-                baseURL: 'http://localhost:8083',
+                baseURL: this.baseURL,
                 url: aUrl,
                 data: JSON.stringify(_this.component),
                 headers: {'Content-Type': 'application/json'},
                 responseEncoding: 'utf8', 
-                responseType: 'json'
+                responseType: 'text'
             }).then(
                 function (returnValue) {
+                    _this.oldComponentName = _this.component.basePackageName+"."+_this.component.simpleName
                     alert(_this.component.simpleName+"构件保存成功!");
                 }
             ).catch(
                 function(error){
-                    if (error.response) {
-                        // The request was made and the server responded with a status code
-                        // that falls out of the range of 2xx
-                        console.log(error.response.data);
-                        console.log(error.response.status);
-                        console.log(error.response.headers);
-                    } else if (error.request) {
-                        // The request was made but no response was received
-                        // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                        // http.ClientRequest in node.js
-                        console.log(error.request);
-                    } else {
-                        // Something happened in setting up the request that triggered an Error
-                        console.log('Error', error.message);
-                    }
-                    alert(_this.component.simpleName+"构件保存失败!\n"+error.responseText);
+                    alert("构件保存失败。原因："+error.response.data);
                 }
             ); 
         },
-        newComponent(){
+        openComponent(componentName,graph){
+            let _this=this;
+            let aUrl='/component/open/'+componentName;
+            axios({
+                method: 'GET',
+                baseURL: this.baseURL,
+                url: aUrl,
+                headers: {'Content-Type': 'application/json'},
+                responseEncoding: 'utf8', 
+                responseType: 'text'
+            }).then(
+                function (returnValue) {
+                    let data = returnValue.data;
+                    graph.fromJSON(JSON.parse(data.oomXml));
+                    if( data.entities.length>0){
+                        _this.$eventHub.$emit('classSelected',data.entities[0]);
+                    }
+                    _this.setComponent(data,graph.getCells());
+                }
+            ).catch(
+                function(error){
+                    let errorInfo ="未知";
+                    if(error.response){
+                        errorInfo = error.response.data;
+                    }else{
+                        errorInfo = error;
+                    }
+                    alert("业务构件打开失败。原因："+errorInfo);
+                }
+            ); 
+        },
+        newComponent(graph){
             this.component ={
                 simpleName: "",
                 basePackageName: "com.ai.bss",
@@ -146,15 +223,17 @@ export default {
                 version: "0.1-snapshot",
                 inheritanceStrategy: "",
                 tablePrefix: "",
-                extendsAbstractEntity: "false",
+                isExtendsAbstractEntity: "false",
                 entities: [],
                 associations: [],
                 oomXml: ""
             }
+            graph.clear();
             this.entityMap = new Map();
             this.linkMap = new Map();
+            this.oldComponentName=null;
         },
-        deleteComponent(){
+        deleteComponent(graph){
             if (!this.component || !this.component.simpleName){
                 alert("请先打开需要删除的构件!");
                 return;
@@ -167,33 +246,19 @@ export default {
             let _this=this;
             axios({
                 method: 'DELETE',
-                baseURL: 'http://localhost:8083',
+                baseURL: this.baseURL,
                 url: aUrl,
                 headers: {'Content-Type': 'application/json'},
                 responseEncoding: 'utf8', 
-                responseType: 'json'
+                responseType: 'text'
             }).then(
                 function (returnValue) {
+                    _this.newComponent(graph);
                     alert(_this.component.simpleName+"构件删除成功!");
                 }
             ).catch(
                 function(error){
-                    if (error.response) {
-                        // The request was made and the server responded with a status code
-                        // that falls out of the range of 2xx
-                        console.log(error.response.data);
-                        console.log(error.response.status);
-                        console.log(error.response.headers);
-                    } else if (error.request) {
-                        // The request was made but no response was received
-                        // `error.request` is an instance of XMLHttpRequest in the browser and an instance of
-                        // http.ClientRequest in node.js
-                        console.log(error.request);
-                    } else {
-                        // Something happened in setting up the request that triggered an Error
-                        console.log('Error', error.message);
-                    }
-                    alert(_this.component.simpleName+"构件删除失败!\n"+error.responseText);
+                    alert("构件删除失败。原因："+error.response.data);
                 }
             ); 
         },
@@ -202,54 +267,70 @@ export default {
                 alert("请新建或打开已有组件!");
                 return;
             }
+
             var componentName = this.component.basePackageName+"."+this.component.simpleName;
-            var form=$("<form>");//定义一个form表单
-            form.attr("style","display:none");
-            form.attr("method","get");
-            form.attr("action","/component/generateProject/"+componentName);//请求url
-            var input1=$("<input>");
-            input1.attr("type","hidden");
-            $("body").append(form);//将表单放置在web中
-            form.append(input1);
-            form.submit();//表单提交
+            let aUrl = "/component/generateProject/"+componentName;
+            let _this= this;
+            axios({
+                method: 'GET',
+                baseURL: this.baseURL,
+                url: aUrl,
+                headers: {'Content-Type': 'blob'},
+                responseEncoding: 'utf8', 
+                responseType: 'blob'
+            }).then(
+                function (returnValue) {
+                    const url = window.URL.createObjectURL(new Blob([returnValue.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', _this.component.simpleName+'.zip'); //or any other extension
+                    document.body.appendChild(link);
+                    link.click();
+                    alert(_this.component.simpleName+"代码生成成功!");
+                }
+            ).catch(
+                function(error){
+                    alert(_this.component.simpleName+"代码生成失败!\n"+error.response.data);
+                }
+            ); 
         },
-        setComponent(param){
-            let data =param.data;
-            component = {
+        setComponent(data,cells){
+            this.component = {
                 simpleName: data.simpleName,
                 basePackageName: data.basePackageName,
-                name: data.name,
+                name: data.basePackageName+"."+data.simpleName,
                 description: data.description,
                 version: data.version,
                 inheritanceStrategy: data.inheritanceStrategy,
                 tablePrefix:data.tablePrefix,
-                extendsAbstractEntity: data.extendsAbstractEntity,
+                isExtendsAbstractEntity: data.isExtendsAbstractEntity,
                 entities: [],
                 associations: [],
                 oomXml: ""
             };
-            for(let entity of param.data.entities){
+            this.oldComponentName = this.component.name;
+            for(let entity of data.entities){
                 if(!entity.name.endsWith("CharValue")){
-                    var cellEntity = cellUtil.findCellById(entity.id, param.cells);
+                    var cellEntity = cellUtil.findCellById(entity.id, cells);
                     if(null!=cellEntity){
                         this.entityMap.set(entity.id,entity);
                     }
                 }
             }
             for (let association of data.associations){
-                var link = cellUtil.findCellById(association.id, param.cells);
+                var link = cellUtil.findCellById(association.id, cells);
                 if(null!=link){
                     this.linkMap.set(association.id,association);
                     this.$eventHub.$emit ('createLinkTool',link);
                 }
             }
-            for(let entity of param.data.entities){
+            for(let entity of data.entities){
                 if(entity.name.endsWith("CharValue")===false){
-                    var cellEntity = cellUtil.findCellById(entity.id, param.cells);
+                    var cellEntity = cellUtil.findCellById(entity.id, cells);
                     if(null!=cellEntity){
                         let newEntity = entity;
                         cellUtil.restoreCommandServices(newEntity, this.entityMap, this.linkMap);
-                        cellUtil.restoreQueryServices(newEntity, entity.queryServices, this.entityMap, this.linkMap)
+                        cellUtil.restoreQueryServices(newEntity, this.entityMap, this.linkMap)
                         this.entityMap.set(entity.id,newEntity);
                     }
                 }
@@ -260,26 +341,34 @@ export default {
         return {
             component: component,
             entityMap: entityMap,
-            linkMap: linkMap
+            linkMap: linkMap,
+            baseURL: baseURL,
+            oldComponentName: oldComponentName
         }
     },
     mounted(){
         let _this = this;
-        this.$eventHub.$on('setComponent',function(data){
-            _this.setComponent(data);
+        this.$eventHub.$on('openComponent',function(componentName,graph){
+            _this.openComponent(componentName,graph);
         });
-        this.$eventHub.$on('saveComponent',function(){
-            _this.saveComponent();
+        this.$eventHub.$on('saveComponent',function(graph){
+            _this.saveComponent(graph);
         });
-        this.$eventHub.$on('newComponent',function(){
-            _this.newComponent();
+        this.$eventHub.$on('saveAsComponent',function(graph,newComponentName){
+            _this.saveAsComponent(graph,newComponentName);
         });
-        this.$eventHub.$on('deleteComponent',function(){   
-            _this.deleteComponent();
+        this.$eventHub.$on('newComponent',function(graph){
+            _this.newComponent(graph);
+        });
+        this.$eventHub.$on('deleteComponent',function(graph){   
+            _this.deleteComponent(graph);
         });
         this.$eventHub.$on('generateJavaCode',function(){
             _this.generateJavaCode();
-        });        
+        });
+         this.$eventHub.$on('componentNameChanged',function(){
+            _this.component.name = _this.component.basePackageName+"."+_this.component.simpleName;
+        });     
     },
     components: {
         ComponentCanvas,

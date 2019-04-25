@@ -7,14 +7,14 @@
                         <label for="simpleName" class="col-sm-3 col-form-label-sm">构件名称:</label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control col-form-label-sm" id="simpleName" placeholder="请输入构件名称" 
-                            v-model = "component.simpleName" required>
+                            v-model = "component.simpleName" required @change="simpleNameChanged">
                         </div>
                     </div>
                     <div class="form-group row">
                         <label for="basePackageName" class="col-sm-3 col-form-label-sm">构件路径:</label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control col-form-label-sm" id="basePackageName" placeholder="请输入构件名称" 
-                            v-model = "component.basePackageName" required>
+                            v-model = "component.basePackageName" required @change="basePackageNameChanged">
                         </div>
                     </div>
                     <div class="form-group row">
@@ -81,6 +81,14 @@ export default {
           { value: 'SECONDARY_TABLE', text: '父子表均持久化' }
         ]
       }
+    },
+    methods:{
+        simpleNameChanged(){
+            this.$eventHub.$emit ('componentNameChanged');
+        },
+        basePackageNameChanged(event){
+            this.$eventHub.$emit ('componentNameChanged');
+        }
     }
 }
 </script>

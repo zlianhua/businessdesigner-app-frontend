@@ -6,8 +6,10 @@
         <b-table striped  responsive :small=true :bordered=true :items="editClass.commandServices" :fields="commandServiceFields" class="my-table"
         ref="commandServicesTable" @row-clicked = "showCommandServiceDetail" head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm">
             <template slot="name" slot-scope="row">
-                <input type="text" class="form-control col-form-label-sm" :value = "row.item.name" @change="commandServiceNameChanged(row.item,$event)"
-                @click="showCommandServiceDetail(row.item)">
+                <span tabindex="0" data-toggle="tooltip" :title="row.item.name">
+                    <input type="text" class="form-control col-form-label-sm" :value = "row.item.name" @change="commandServiceNameChanged(row.item,$event)"
+                    @click="showCommandServiceDetail(row.item)">
+                </span>
             </template>
             <template slot="publishEvent" slot-scope="row">
                 <b-form-checkbox
@@ -17,8 +19,10 @@
                 />
             </template>
             <template slot="eventName" slot-scope="row">
-                <input type="text" class="form-control col-form-label-sm" :value = "row.item.eventName" v-if="row.item.publishEvent==true"
-                 @change="commandServiceEventNameChanged(row.item,$event)" @click="showCommandServiceDetail(row.item)">
+                <span tabindex="0" data-toggle="tooltip" :title="row.item.eventName">
+                    <input type="text" class="form-control col-form-label-sm" :value = "row.item.eventName" v-if="row.item.publishEvent==true"
+                    @change="commandServiceEventNameChanged(row.item,$event)" @click="showCommandServiceDetail(row.item)">
+                </span>
             </template>
             <template slot="actions" slot-scope="row">
                 <button @click="deleteCommandService(row.index)">
@@ -28,11 +32,15 @@
         </b-table>
         <br>
         <div v-if="currentCommandService!=null">
-            <b-table striped  responsive :small=true :bordered=true :items="currentCommandService.parameters" :fields="parameterFields"
-             head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="my-table" >
+            <b-table striped responsive :small=true :bordered=true :items="currentCommandService.parameters" :fields="parameterFields"
+             head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="param-table" >
                 <template slot="name" slot-scope="row">
-                    <label class="form-control col-form-label-sm" v-if="row.item.relateName && row.item.relateName.length>0">{{row.item.relateName}}</label>
-                    <label class="form-control col-form-label-sm" v-else>{{row.item.name}}</label>
+                    <span tabindex="0" data-toggle="tooltip" :title="row.item.relateName" v-if="row.item.relateName && row.item.relateName.length>0">
+                        <label class="form-control col-form-label-sm" >{{row.item.relateName}}</label>
+                    </span>
+                    <span tabindex="0" data-toggle="tooltip" :title="row.item.name" v-else>
+                        <label class="form-control col-form-label-sm" >{{row.item.name}}</label>
+                    </span>
                 </template>
                 <template slot="isParameter" slot-scope="row">
                     <b-form-checkbox
@@ -212,6 +220,10 @@ export default {
 <style>
 .my-table {
   max-height: 200px;
+  overflow-y: auto;
+}
+.param-table {
+  max-height: 300px;
   overflow-y: auto;
 }
 </style>
