@@ -1,6 +1,6 @@
 <template>
   <p>
-    404 SORRY COULDN'T FIND IT!!!
+    404 未找到对应的资源!!!
   </p>
 </template>
 <script>

@@ -14,10 +14,10 @@
 <script>
 import ComponentCanvas from '@/components/ComponentCanvas';
 import ComponentEditor from '@/components/ComponentEditor';
-import Vue from 'vue';
 import axios from "axios";
 import cellUtil from "../cellUtil.js";
 import { setTimeout } from 'timers';
+const config = require('../../config/config.js');
 let entityMap = new Map();
 let linkMap = new Map();
 let component = {
@@ -33,7 +33,7 @@ let component = {
     associations: [],
     oomXml: ""
 };
-let baseURL = 'http://localhost:8083';
+let baseURL = 'http://'+config.metaDataServer.host+":"+config.metaDataServer.port;
 let oldComponentName = null;
 export default {
     name: 'BusinessComponent',
@@ -280,17 +280,39 @@ export default {
                 responseType: 'blob'
             }).then(
                 function (returnValue) {
-                    const url = window.URL.createObjectURL(new Blob([returnValue.data]));
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.setAttribute('download', _this.component.simpleName+'.zip'); //or any other extension
-                    document.body.appendChild(link);
-                    link.click();
+                    cellUtil.downloadFile(new Blob([returnValue.data]), _this.component.simpleName+'.zip');
                     alert(_this.component.simpleName+"代码生成成功!");
                 }
             ).catch(
                 function(error){
                     alert(_this.component.simpleName+"代码生成失败!\n"+error.response.data);
+                }
+            ); 
+        },
+        generateUIPages(){
+            if (!this.component.simpleName){
+                alert("请新建或打开已有组件!");
+                return;
+            }
+
+            var componentName = this.component.basePackageName+"."+this.component.simpleName;
+            let aUrl = "/component/generateUIPages/"+componentName;
+            let _this= this;
+            axios({
+                method: 'GET',
+                baseURL: this.baseURL,
+                url: aUrl,
+                headers: {'Content-Type': 'blob'},
+                responseEncoding: 'utf8', 
+                responseType: 'blob'
+            }).then(
+                function (returnValue) {
+                    cellUtil.downloadFile(new Blob([returnValue.data]), _this.component.simpleName+'UI.zip');
+                    alert(_this.component.simpleName+"UI代码生成成功!");
+                }
+            ).catch(
+                function(error){
+                    alert(_this.component.simpleName+"UI代码生成失败!\n"+error.response.data);
                 }
             ); 
         },
@@ -365,6 +387,9 @@ export default {
         });
         this.$eventHub.$on('generateJavaCode',function(){
             _this.generateJavaCode();
+        });
+        this.$eventHub.$on('generateUIPages',function(){
+            _this.generateUIPages();
         });
          this.$eventHub.$on('componentNameChanged',function(){
             _this.component.name = _this.component.basePackageName+"."+_this.component.simpleName;

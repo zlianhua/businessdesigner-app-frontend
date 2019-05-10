@@ -13,7 +13,7 @@
                     <div class="form-group row">
                         <label for="basePackageName" class="col-sm-3 col-form-label-sm">构件路径:</label>
                         <div class="col-sm-9">
-                            <input type="text" class="form-control col-form-label-sm" id="basePackageName" placeholder="请输入构件名称" 
+                            <input type="text" class="form-control col-form-label-sm" id="basePackageName" placeholder="请输入构件路径" 
                             v-model = "component.basePackageName" required @change="basePackageNameChanged">
                         </div>
                     </div>
@@ -92,3 +92,8 @@ export default {
     }
 }
 </script>
+<style>
+    .form-group {
+        margin-bottom:0px;
+    }
+</style>

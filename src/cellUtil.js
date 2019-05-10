@@ -1,4 +1,7 @@
 const _ = require('lodash');
+const Velocity = require('velocityjs');
+const fs = require("fs");
+const axios = require("axios");
 export default {
   findCellById(cellId, cells){
     var returnCell = null;
@@ -28,6 +31,9 @@ export default {
     }
     if (isAddSuperAttr){
       let entity = entityMap.get(entityId);
+      for (let attr of entity.attributes){
+        attr.superEntityName = entity.name;
+      }
       attributes = entity.attributes.concat(attributes);
     }
     return attributes;
@@ -70,9 +76,13 @@ export default {
           isParameter:false,
           relateName:"",
           name:attr.name,
+          type:attr.type,
           valueFrom:"",
           value:"",
           enums:enums
+        }
+        if (attr.superEntityName){
+          parameter.superEntityName = attr.superEntityName;
         }
         parameters.push(parameter);
       }
@@ -105,6 +115,7 @@ export default {
             isParameter:false,
             relateName:relateName,
             name:attr.name,
+            type:attr.type,
             valueFrom:"",
             value:"",
             enums:enums
@@ -126,121 +137,76 @@ export default {
           paramMap.set(param.name, param);
         }
         aCommandService.parameters = [];
-        for (let param of parameters){
-          let existParam = paramMap.get(param.name);
+        for (let aParam of parameters){
+          let existParam = paramMap.get(aParam.name);
           if (existParam != null){
-            param.isParameter = true;
-            param.valueFrom = existParam.valueFrom;
-            param.value = existParam.value;
-            param.relateName = existParam.relateName;
+            aParam.isParameter = true;
+            aParam.type = existParam.type;
+            aParam.valueFrom = existParam.valueFrom;
+            aParam.value = existParam.value;
+            aParam.relateName = existParam.relateName;
           }
-          aCommandService.parameters.push(param);
+          aCommandService.parameters.push(aParam);
         }
       });
     }
   },
   restoreQueryServices(newEntity, entityMap, linkMap){
     let attributes = newEntity.attributes;
-    let queryServiceNames = [];
-    _.each(newEntity.queryServices, function(aQueryServiceName){
-      queryServiceNames.push(aQueryServiceName);
-    });
+    let queryServices = newEntity.queryServices;
     attributes = this.findAttributesOfSuper(newEntity.id, attributes, false, entityMap, linkMap);
-    if (queryServiceNames != null && queryServiceNames.length > 0){
-      newEntity.queryServices = [];
-      for (let queryServiceNameParam of queryServiceNames){
-        if (queryServiceNameParam != null && queryServiceNameParam.trim !== ""){
-          let aQueryServiceName = null;
-          aQueryServiceName = queryServiceNameParam;
-          let parametersMap = new Map();
-          let queryService = {
-            name: aQueryServiceName,
-            parameters: []
-          };
-          let paramsStart = aQueryServiceName.indexOf("(") + 1;
-          let paramsEnd = aQueryServiceName.indexOf(")");
-          let param = aQueryServiceName.substring(paramsStart, paramsEnd);
-          let fieldNames = param.split(",");
-          let methodFullName = aQueryServiceName.replace(param, "");
-          let ppms = methodFullName.split("OrderBy");
-          let findString = ppms[0];
-          let sortString = ppms[1];
-          for (let i = 0; i < fieldNames.length; i++){
-            let fieldDataType = fieldNames[i].split(" ")[0];
-            let lCurrentFieldName = fieldNames[i].split(" ")[1];
-            let currentFieldName = lCurrentFieldName.replace(/\b\w/g, function(l){ return l.toUpperCase() });
-            let fieldStart = findString.indexOf(currentFieldName);
-            let fieldEnd;
-            if (i < fieldNames.length - 1){
-              let nextFieldName = fieldNames[i + 1].split(" ")[1];
-              nextFieldName = nextFieldName.replace(/\b\w/g, function(l){ return l.toUpperCase() });
-              fieldEnd = findString.indexOf(nextFieldName);
-            } else {
-              fieldEnd = findString.length;
-            }
-            let fieldCondition = findString.substring(fieldStart, fieldEnd);
-            let parameter = {};
-            parameter.type = fieldDataType;
-            parameter.name = lCurrentFieldName;
-            parameter.isParameter = true;
-            let sStr = lCurrentFieldName.length;
-            if (fieldCondition.endsWith("And")){
-              let eStr = fieldCondition.indexOf("And");
-              if (eStr > sStr){
-                parameter.condition = fieldCondition.substring(sStr, eStr);
-              }
-              parameter.relation = "And";
-            } else if (fieldCondition.endsWith("Or")){
-              let eStr = fieldCondition.indexOf("Or");
-              if (eStr > sStr){
-                parameter.condition = fieldCondition.substring(sStr, eStr);
-              }
-              parameter.relation = "Or";
-            } else {
-              parameter.relation = "";
-              let eStr = fieldCondition.length;
-              if (eStr > sStr){
-                parameter.condition = fieldCondition.substring(sStr, eStr);
-              }
-            }
-            parametersMap.set(lCurrentFieldName, parameter);
-          }
-          for (let aAttr of attributes){
-            let aParameter = parametersMap.get(aAttr.name);
-            if (!aParameter){
-              aParameter = {};
-              aParameter.name = aAttr.name;
-              aParameter.isParameter = false;
-              aParameter.type = aAttr.type;
-              aParameter.options = [];
-              aParameter.naconditione = "";
-              aParameter.relation = "";
-              aParameter.sort = "";
-            }
-            if (sortString){
-              let currentFieldName = aAttr.name.replace(/\b\w/g, function(l){ return l.toUpperCase() });
-              let sortStart = -1;
-              sortStart = sortString.indexOf(currentFieldName);
-              if (sortStart >= 0){
-                let sortSeq = sortString.substring(sortStart + currentFieldName.length, sortStart + currentFieldName.length + 3);
-                if (sortSeq === "Asc"){
-                  aParameter.sort = "Asc";
-                } else if (sortSeq === "Des"){
-                  aParameter.sort = "Desc";
-                } else {
-                  aParameter.sort = "";
-                }
-              } else {
-                aParameter.sort = "";
-              }
-            } else {
-              aParameter.sort = "";
-            }
+    if (queryServices != null && queryServices.length > 0){
+      for (let queryService of queryServices){
+        let parametersMap = new Map();
+        for (let param of queryService.parameters){
+          parametersMap.set(param.name, param);
+        }
+        for (let aAttr of attributes){
+          let aParameter = parametersMap.get(aAttr.name);
+          if (!aParameter){
+            aParameter = {};
+            aParameter.name = aAttr.name;
+            aParameter.isParameter = false;
+            aParameter.type = aAttr.type;
+            aParameter.options = [];
+            aParameter.condition = "";
+            aParameter.relation = "";
+            aParameter.sort = "";
             queryService.parameters.push(aParameter);
           }
-          newEntity.queryServices.push(queryService);
         }
       }
     }
+  },
+  downloadFile(content, fileName){
+    const url = window.URL.createObjectURL(content);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+  },
+  findAttributeByName(entity, attrName, entityMap, linkMap){
+    let retAttr = null;
+    let attributes = entity.attributes;
+    attributes = this.findAttributesOfSuper(entity.id, attributes, false, entityMap, linkMap);
+    for (let attr of attributes){
+      if (attr.name === attrName){
+        retAttr = attr;
+        break;
+      }
+    }
+    return retAttr;
+  },
+  findEntityBySimpleName(entityMap, entitySimpleName){
+    let retEntity = null;
+    for (let [, v] of entityMap){
+      if (v.name === entitySimpleName){
+        retEntity = v;
+        break;
+      }
+    }
+    return retEntity;
   }
+
 }

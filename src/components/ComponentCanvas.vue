@@ -15,10 +15,11 @@
             <span>|</span>
             <button id="newComponent" @click="newComponent" title="新建构件"><font-awesome-icon icon="file-alt"/></button>
             <button id="save" @click="saveComponent" title="保存构件"> <font-awesome-icon icon="save"/></button>
-            <button id="save" @click="saveAsComponent" title="构件另存为"> <font-awesome-icon icon="share-square"/></button>
+            <button id="saveAs" @click="saveAsComponent" title="构件另存为"> <font-awesome-icon icon="share-square"/></button>
             <button id="open" @click="openComponent" title="打开构件"> <font-awesome-icon icon="folder-open"/> </button>
             <button id="delete" @click="deleteComponent" title="删除构件"><font-awesome-icon icon="trash"/></button>
             <button id="getCode" @click="generateJavaCode" title="生成工程代码"><font-awesome-icon icon="coffee"/></button>
+            <button id="getCode" @click="generateUIPages" title="生成UI代码"><font-awesome-icon icon="file-download"/></button>
             <button id="zoomIn" @click="zoomIn" title="放大"><font-awesome-icon icon="search-plus"/></button>
             <button id="zoomOut" @click="zoomOut" title="缩小"><font-awesome-icon icon="search-minus"/></button>
             <button id="resetZoom" @click="resetZoom" title="恢复原大小"><font-awesome-icon icon="search"/></button>
@@ -56,7 +57,7 @@ export default {
         openComponent(){
             let componentName = prompt("请输入构件名称:");
             if(!componentName || componentName.indexOf(".")<0){
-                alert("查询构件名称必须包括包名。");
+                alert("构件名称必须包括包名。");
                 return;
             }
             this.$eventHub.$emit ('openComponent',componentName,this.graph);
@@ -79,6 +80,9 @@ export default {
         },
         generateJavaCode(){
             this.$eventHub.$emit ('generateJavaCode');
+        },
+        generateUIPages(){
+            this.$eventHub.$emit ('generateUIPages');
         },
         paperOnKeyDown(e){
            if(e.keyCode == 46) {
@@ -233,8 +237,10 @@ export default {
             if(newHeight!=cell.attributes.size.height){
                 cell.resize(cell.attributes.size.width,newHeight);
             }
-            this.currentHighLight.unhighlight();
-            this.currentHighLight.highlight();
+            if(this.currentHighLight){
+                this.currentHighLight.unhighlight();
+                this.currentHighLight.highlight();
+            }
         },
         replaceToExternalEntity(entity){
             entity.type="uml.ExternalClass";

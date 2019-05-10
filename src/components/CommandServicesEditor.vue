@@ -11,6 +11,13 @@
                     @click="showCommandServiceDetail(row.item)">
                 </span>
             </template>
+            <template slot="action" slot-scope="row">
+                    <select v-model="row.item.action" class="form-control col-form-label-sm">
+                        <option>Create</option>
+                        <option>Update</option>
+                        <option>Delete</option>
+                    </select>
+            </template>    
             <template slot="publishEvent" slot-scope="row">
                 <b-form-checkbox
                     v-model = "row.item.publishEvent"
@@ -32,20 +39,22 @@
         </b-table>
         <br>
         <div v-if="currentCommandService!=null">
-            <b-table striped responsive :small=true :bordered=true :items="currentCommandService.parameters" :fields="parameterFields"
+            <b-table striped fixed responsive :small=true :bordered=true :items="currentCommandService.parameters" :fields="parameterFields"
              head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="param-table" >
-                <template slot="name" slot-scope="row">
+                <template slot="name" slot-scope="row" class="col-sm-1">
                     <span tabindex="0" data-toggle="tooltip" :title="row.item.relateName" v-if="row.item.relateName && row.item.relateName.length>0">
-                        <label class="form-control col-form-label-sm" >{{row.item.relateName}}</label>
+                        <input ttpe="text" class="form-control col-form-label-sm" v-model="row.item.relateName" maxlength="100"/>
                     </span>
                     <span tabindex="0" data-toggle="tooltip" :title="row.item.name" v-else>
-                        <label class="form-control col-form-label-sm" >{{row.item.name}}</label>
+                        <input ttpe="text" class="form-control col-form-label-sm" v-model="row.item.name" maxlength="100"/>
                     </span>
                 </template>
                 <template slot="isParameter" slot-scope="row">
                     <b-form-checkbox
                         v-model = "row.item.isParameter"
+                        unchecked-value="false"
                         size="sm"
+                        @change="isParameterChanged(row.item)"
                     />
                 </template>
                 <template slot="valueFrom" slot-scope="row">
@@ -84,7 +93,9 @@ export default {
         addCommandService(){
             let parameters = cellUtil.createParameters(this.editClass, this.entityMap, this.linkMap);
             var method={
-                name:"",
+                name: "",
+                type:"",
+                action: "Update",
                 publishEvent:false,
                 eventName:"",
                 parameters:parameters
@@ -154,7 +165,20 @@ export default {
                 }
             }
             this.$eventHub.$emit ('serviceChanged',this.editClass);
+        },
+        isParameterChanged(item){
+            if(item.isParameter){
+                item.isParameter = false;
+            }else{
+                item.isParameter = true;
+            }
         }
+    },
+    mounted(){
+        let _this = this;
+        this.$eventHub.$on('classSelected',function(currentClass){
+            _this.currentCommandService = null;
+        });
     },
     data(){
         return{
@@ -164,6 +188,11 @@ export default {
                     key: 'name',
                     label:'名称',
                     sortable: true
+                },
+                {
+                    key: 'action',
+                    label:'类型',
+                    sortable: false
                 },
                 {
                     key: 'publishEvent',
@@ -204,17 +233,7 @@ export default {
                 }
             ]
         }
-    },
-    mounted(){
-        let _this = this;
-        this.$eventHub.$on('restoreCommandServices',function(entity){
-            console.log('comm');
-            _this.restoreCommandServices(entity);
-        });
-    },
-    beforeDestroy(){
-        this.$eventHub.$off('restoreCommandServices');
-    },
+    }
 }
 </script>
 <style>

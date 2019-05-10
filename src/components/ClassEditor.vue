@@ -76,17 +76,18 @@ export default {
                 return;
             }
             let newName=event.target.value;
-            let oldValue = this.editClass.entityName;
-            let oldKeyName = oldValue.charAt(0).toLowerCase()+oldValue.substr(1)+"Id";
-            let oldAttr = this.editClass.attributes.find(function(e1){
-                if(e1.name==oldKeyName){
-                    return e1;
+            let oldValue = this.editClass.name;
+            if(oldValue){
+                let oldKeyName = oldValue.charAt(0).toLowerCase()+oldValue.substr(1)+"Id";
+                let oldAttr = this.editClass.attributes.find(function(e1){
+                    if(e1.name==oldKeyName){
+                        return e1;
+                    }
+                });
+                if(oldAttr){
+                    this.editClass.attributes.splice(this.editClass.attributes.indexOf(oldAttr),1);
                 }
-            });
-            if(oldAttr){
-                this.editClass.attributes.splice(this.editClass.attributes.indexOf(oldAttr),1);
             }
-
             let newKeyName = newName.charAt(0).toLowerCase()+newName.substr(1)+"Id";
             let existNewKey = false;
             existNewKey = this.editClass.attributes.find(function(e1){
@@ -94,7 +95,7 @@ export default {
                     return true;
                 }
             });
-            this.editClass.entityName = newName;
+            this.editClass.name = newName;
             if(!existNewKey){
                 let newRow = {
                     name: newKeyName,

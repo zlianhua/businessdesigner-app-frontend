@@ -219,6 +219,11 @@ export default {
         },
         isCharSpecChanged(item){
             this.currentAttribute = item;
+            if(item.isCharSpec){
+                item.isCharSpec = false;
+            }else{
+                item.isCharSpec = true;
+            }
         },
         clickAttributeTableRow(index){
             let myTable = this.$refs.attributesTable.$el,
@@ -449,10 +454,11 @@ export default {
         });
         this.totalRows = this.editClass.attributes.length;
         this.$eventHub.$on('ClassNameChanged',function(currentClass){
-            _this.$refs.attributesTable.refresh();
+            if(_this.$refs.attributesTable){
+                _this.$refs.attributesTable.refresh();
+            }
         });
         this.$eventHub.$on('restoreEntitiesServices',function(param){
-            console.log("111");
             _this.restoreEntitiesServices(param);
         });
     },

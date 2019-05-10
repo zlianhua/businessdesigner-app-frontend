@@ -27,13 +27,13 @@
                 </template>
                 <template slot="isParameter" slot-scope="row">
                     <b-form-checkbox
-                        v-model = "row.item.isParameter"
-                        size="sm" @change="refreshQueryServiceName(row.item)"
+                        v-model = "row.item.isParameter" 
+                        size="sm" @change="refreshQueryServiceName(row.item,$event,true)"
                     />
                 </template>
                 <template slot="condition" slot-scope="row">
                     <div v-if="row.item.isParameter">
-                        <b-form-select v-if ="row.item.type === 'String'" 
+                        <b-form-select v-if ="row.item.type === 'String'"
                             :options="stringConditionOptions" @change.native="conditionChanged(row.item,$event)"
                             v-model = "row.item.condition" class="form-control col-form-label-sm">
                         </b-form-select>
@@ -41,7 +41,7 @@
                             :options="integerConditionOptions" @change.native="conditionChanged(row.item,$event)"
                             v-model = "row.item.condition" class="form-control col-form-label-sm">
                         </b-form-select>
-                        <b-form-select v-else-if ="row.item.type === 'Timestamp'" 
+                        <b-form-select v-else-if ="row.item.type === 'Timestamp'"
                             :options="timestampConditionOptions" @change.native="conditionChanged(row.item,$event)"
                             v-model = "row.item.condition" class="form-control col-form-label-sm">
                         </b-form-select>
@@ -49,7 +49,7 @@
                             :options="booleanConditionOptions" @change.native="conditionChanged(row.item,$event)"
                             v-model = "row.item.condition" class="form-control col-form-label-sm">
                         </b-form-select>
-                        <b-form-select v-else
+                        <b-form-select v-else 
                             :options="blankConditionOptions" @change.native="conditionChanged(row.item,$event)"
                             v-model = "row.item.condition" class="form-control col-form-label-sm">
                         </b-form-select>
@@ -57,7 +57,7 @@
                 </template>
                 <template slot="relation" slot-scope="row">
                     <div v-if="row.item.isParameter">
-                        <select v-model="row.item.relation" class="form-control col-form-label-sm" @change="refreshQueryServiceName">
+                        <select v-model="row.item.relation" class="form-control col-form-label-sm" @change="refreshQueryServiceName(row.item,$event)">
                             <option></option>
                             <option>And</option>
                             <option>Or</option>
@@ -65,7 +65,7 @@
                     </div>
                 </template>
                 <template slot="sort" slot-scope="row">
-                    <select v-model="row.item.sort" class="form-control col-form-label-sm" @change="refreshQueryServiceName">
+                    <select v-model="row.item.sort" class="form-control col-form-label-sm" @change="refreshQueryServiceName(row.item,$event)">
                         <option></option>
                         <option>Desc</option>
                         <option>Asc</option>
@@ -76,7 +76,7 @@
     </div>    
 </template>
 <script>
-let currentQueryService;
+let currentQueryService = null;
 let _this = this;
 import cellUtil from "../cellUtil.js";
 export default {
@@ -115,8 +115,7 @@ export default {
             item.condition = event.target.value;
             this.refreshQueryServiceName();
         },
-        refreshQueryServiceName: function(item){
-            let clickedParameterName = item.name;
+        refreshQueryServiceName: function(item,event,isParameterChanged){
             if(this.currentQueryService.parameters.length>0){
                 let methodNameString ="";
                 let paramString="";
@@ -125,7 +124,7 @@ export default {
                 this.currentQueryService.name="";
                 for(let parameter of this.currentQueryService.parameters){
                     let cName=parameter.name.replace(/\b\w/g, function(l){ return l.toUpperCase() });
-                    if(clickedParameterName && clickedParameterName==parameter.name){
+                    if(isParameterChanged && item.name === parameter.name) {
                         parameter.isParameter = !parameter.isParameter;
                     }
                     if(parameter.isParameter){
@@ -195,8 +194,11 @@ export default {
             this.currentQueryService = queryService;
         }  
     },
-    created(){
+    mounted(){
         let _this = this;
+        this.$eventHub.$on('classSelected',function(currentClass){
+            _this.currentQueryService = null;
+        });
         this.$eventHub.$on('restoreQueryServices',function(param){
             _this.restoreQueryServices(param);
         })
