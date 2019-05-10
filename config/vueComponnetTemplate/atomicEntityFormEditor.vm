@@ -1,0 +1,24 @@
+#set ($eneitySimpleName = ${entity.simpleName})
+<template>
+    <div>
+        <form @submit.prevent>
+            <div class="form-group row">
+                #foreach ( $attr in $attributes)
+                <label for="${attr.name}" class="col-sm-3 col-form-label-sm">${attr.description}:</label>
+                <div class="col-sm-9">
+                    <input type="text" class="form-control col-form-label-sm" id="${attr.name}" placeholder="请输入${attr.description}" 
+                    :value = "entityObject.${attr.name}" @change = "nameChanged($event)" required>
+                </div>
+                #end
+            </div>
+        </form>    
+    </div>
+</template>
+<script>
+export default {
+    name: $eneitySimpleName+'FormEditor',
+    props:['${eneitySimpleName}','entityObject'],
+    methods: {
+    }
+}
+</script>    
