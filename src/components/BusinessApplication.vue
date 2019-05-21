@@ -195,8 +195,7 @@ export default {
                 return;
             }
 
-            var applicationName = this.application.name;
-            let aUrl = "/application/generateUIPages/"+applicationName;
+            let aUrl = "/application/generateUIPages/"+this.application.name;
             let _this= this;
             axios({
                 method: 'GET',

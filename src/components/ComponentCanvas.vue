@@ -19,7 +19,6 @@
             <button id="open" @click="openComponent" title="打开构件"> <font-awesome-icon icon="folder-open"/> </button>
             <button id="delete" @click="deleteComponent" title="删除构件"><font-awesome-icon icon="trash"/></button>
             <button id="getCode" @click="generateJavaCode" title="生成工程代码"><font-awesome-icon icon="coffee"/></button>
-            <button id="getCode" @click="generateUIPages" title="生成UI代码"><font-awesome-icon icon="file-download"/></button>
             <button id="zoomIn" @click="zoomIn" title="放大"><font-awesome-icon icon="search-plus"/></button>
             <button id="zoomOut" @click="zoomOut" title="缩小"><font-awesome-icon icon="search-minus"/></button>
             <button id="resetZoom" @click="resetZoom" title="恢复原大小"><font-awesome-icon icon="search"/></button>
@@ -80,9 +79,6 @@ export default {
         },
         generateJavaCode(){
             this.$eventHub.$emit ('generateJavaCode');
-        },
-        generateUIPages(){
-            this.$eventHub.$emit ('generateUIPages');
         },
         paperOnKeyDown(e){
            if(e.keyCode == 46) {

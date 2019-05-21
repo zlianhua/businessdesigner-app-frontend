@@ -289,33 +289,6 @@ export default {
                 }
             ); 
         },
-        generateUIPages(){
-            if (!this.component.simpleName){
-                alert("请新建或打开已有组件!");
-                return;
-            }
-
-            var componentName = this.component.basePackageName+"."+this.component.simpleName;
-            let aUrl = "/component/generateUIPages/"+componentName;
-            let _this= this;
-            axios({
-                method: 'GET',
-                baseURL: this.baseURL,
-                url: aUrl,
-                headers: {'Content-Type': 'blob'},
-                responseEncoding: 'utf8', 
-                responseType: 'blob'
-            }).then(
-                function (returnValue) {
-                    cellUtil.downloadFile(new Blob([returnValue.data]), _this.component.simpleName+'UI.zip');
-                    alert(_this.component.simpleName+"UI代码生成成功!");
-                }
-            ).catch(
-                function(error){
-                    alert(_this.component.simpleName+"UI代码生成失败!\n"+error.response.data);
-                }
-            ); 
-        },
         setComponent(data,cells){
             this.component = {
                 simpleName: data.simpleName,
@@ -388,10 +361,7 @@ export default {
         this.$eventHub.$on('generateJavaCode',function(){
             _this.generateJavaCode();
         });
-        this.$eventHub.$on('generateUIPages',function(){
-            _this.generateUIPages();
-        });
-         this.$eventHub.$on('componentNameChanged',function(){
+        this.$eventHub.$on('componentNameChanged',function(){
             _this.component.name = _this.component.basePackageName+"."+_this.component.simpleName;
         });     
     },
