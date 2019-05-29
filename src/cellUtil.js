@@ -126,8 +126,8 @@ export default {
   restoreCommandServices(entity, entityMap, linkMap){
     let commandServices = entity.commandServices;
     if (commandServices != null && commandServices.length > 0){
-      let parameters = this.createParameters(entity, entityMap, linkMap);
-      _.each(commandServices, function(aCommandService){
+      for (let aCommandService of commandServices){
+        let parameters = this.createParameters(entity, entityMap, linkMap);
         let paramMap = new Map();
         for (let param of aCommandService.parameters){
           param.isParameter = true;
@@ -145,7 +145,7 @@ export default {
           }
           aCommandService.parameters.push(aParam);
         }
-      });
+      }
     }
   },
   restoreQueryServices(newEntity, entityMap, linkMap){
@@ -169,6 +169,7 @@ export default {
             aParameter.condition = "";
             aParameter.relation = "";
             aParameter.sort = "";
+            aParameter.isNullable = false;
             queryService.parameters.push(aParameter);
           }
         }

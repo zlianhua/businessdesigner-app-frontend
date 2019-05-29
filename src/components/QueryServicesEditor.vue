@@ -31,6 +31,12 @@
                         size="sm" @change="refreshQueryServiceName(row.item,$event,true)"
                     />
                 </template>
+                <template slot="isNullable" slot-scope="row">
+                    <b-form-checkbox
+                        v-model = "row.item.isNullable" 
+                        size="sm"
+                    />
+                </template>
                 <template slot="condition" slot-scope="row">
                     <div v-if="row.item.isParameter">
                         <b-form-select v-if ="row.item.type === 'String'"
@@ -98,7 +104,8 @@ export default {
                         isParameter:false,
                         condition:"",
                         relation:"",
-                        sort:""
+                        sort:"",
+                        isNullable:false
                     }
                     parameters.push(parameter);
                 }
@@ -139,6 +146,8 @@ export default {
                         if(count<this.currentQueryService.parameters.length-1){
                             if(parameter.relation && parameter.relation!=""){
                                 methodNameString+=parameter.relation;
+                            }else{
+                                methodNameString+="Or";
                             }
                         }
                     }
@@ -246,6 +255,11 @@ export default {
                     key: 'sort',
                     label:'排序',
                     sortable: true
+                },
+                {
+                    key: 'isNullable',
+                    label:'可空',
+                    sortable: false
                 }
             ],
             stringConditionOptions:[

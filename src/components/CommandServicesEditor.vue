@@ -15,7 +15,8 @@
                     <select v-model="row.item.action" class="form-control col-form-label-sm">
                         <option>Create</option>
                         <option>Update</option>
-                        <option>Delete</option>
+                        <option>Create_Member</option>
+                        <option>Update_Member</option>
                     </select>
             </template>    
             <template slot="publishEvent" slot-scope="row">
@@ -40,7 +41,7 @@
         <br>
         <div v-if="currentCommandService!=null">
             <b-table striped fixed responsive :small=true :bordered=true :items="currentCommandService.parameters" :fields="parameterFields"
-             head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="param-table" >
+             ref="commandServiceParameterTable" head-variant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm" class="param-table" >
                 <template slot="name" slot-scope="row" class="col-sm-1">
                     <span tabindex="0" data-toggle="tooltip" :title="row.item.relateName" v-if="row.item.relateName && row.item.relateName.length>0">
                         <input ttpe="text" class="form-control col-form-label-sm" v-model="row.item.relateName" maxlength="100"/>
@@ -116,8 +117,8 @@ export default {
                 this.currentCommandService = this.editClass.commandServices[newIdx];
             }
         },
-        showCommandServiceDetail(commandService){
-            this.currentCommandService = commandService;
+        showCommandServiceDetail(item){
+            this.currentCommandService = item;
         },
         commandServiceEventNameChanged(item,event){
             this.currentCommandService=item;
