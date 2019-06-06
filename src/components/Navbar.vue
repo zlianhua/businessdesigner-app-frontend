@@ -5,7 +5,7 @@
       type="dark"
       variant="info">
       <b-navbar-brand :to="{ name: 'Home' }">
-        <img src="../assets/asiainfo.png" width="30%" />
+        <!-- <img src="../assets/xxxxlog.png" width="30%" /> -->
         Business Designer
       </b-navbar-brand>
       <b-navbar-nav>

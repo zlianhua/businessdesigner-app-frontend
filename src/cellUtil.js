@@ -1,14 +1,28 @@
+import { timingSafeEqual } from 'crypto';
+
 const _ = require('lodash');
 export default {
   findCellById(cellId, cells){
-    var returnCell = null;
-    _.each(cells, function(cell) {
+    let returnCell = null;
+    for (let cell of cells){
       if (cell.id === cellId){
         returnCell = cell;
-        return returnCell;
+        break;
       }
-    });
+    }
     return returnCell;
+  },
+  isExtendsFrom(thisEntityId, anotherEntityId, entityMap, linkMap){
+    let parentEntity = this.findParentEntity(thisEntityId, entityMap, linkMap);
+    if (parentEntity){
+      if (parentEntity.id === anotherEntityId){
+        return true;
+      } else {
+        return this.isExtendsFrom(parentEntity.id, anotherEntityId, entityMap, linkMap);
+      }
+    } else {
+      return false;
+    }
   },
   findParentEntity: function(entityId, entityMap, linkMap){
     let parentEntity = null;
@@ -20,7 +34,6 @@ export default {
     }
     return parentEntity;
   },
-
   findAttributesOfSuper: function(entityId, attributes, isAddSuperAttr, entityMap, linkMap){
     let parent = this.findParentEntity(entityId, entityMap, linkMap);
     if (parent != null){
@@ -35,7 +48,6 @@ export default {
     }
     return attributes;
   },
-
   findRelateEntities: function(entity, relateEntities, entityMap, linkMap){
     for (let [, v] of linkMap){
       if (v.targetId === entity.id && (v.type === "Aggregation" || v.type === "Composition")){
@@ -50,13 +62,26 @@ export default {
     }
     return relateEntities;
   },
-  buildParentEntityName(relatesMap, relateEntity, parentEntityName){
+  findParentRelateEntities: function(entity, relateEntities, entityMap, linkMap){
+    relateEntities = this.findRelateEntities(entity, relateEntities, entityMap, linkMap);
+    let parentEntity = this.findParentEntity(entity.id, entityMap, linkMap);
+    if (parentEntity){
+      relateEntities = this.findParentRelateEntities(parentEntity, relateEntities, entityMap, linkMap);
+    }
+    return relateEntities;
+  },
+  buildParentEntityName(relatesMap, entity, relateEntity, parentEntityName, entityMap, linkMap){
     if (relateEntity.parentEntity){
       let parentRelateEntity = relatesMap.get(relateEntity.parentEntity.name);
       if (parentRelateEntity){
-        return this.buildParentEntityName(relatesMap, parentRelateEntity, parentEntityName);
+        return this.buildParentEntityName(relatesMap, entity, parentRelateEntity, parentEntityName, entityMap, linkMap);
       }
-      return relateEntity.parentEntity.name + "." + parentEntityName;
+      let isExtends = this.isExtendsFrom(entity.id, relateEntity.parentEntity.id, entityMap, linkMap);  
+      if (isExtends){
+        return parentEntityName;
+      } else {
+        return relateEntity.parentEntity.name + "." + parentEntityName;
+      }
     }
   },
   createParameters(editClass, entityMap, linkMap){
@@ -86,6 +111,10 @@ export default {
     });
     var relateEntities = [];
     relateEntities = this.findRelateEntities(editClass, relateEntities, entityMap, linkMap);
+    let parentEntity = this.findParentEntity(editClass.id, entityMap, linkMap);
+    if (parentEntity){
+      relateEntities = this.findParentRelateEntities(parentEntity, relateEntities, entityMap, linkMap);
+    }
     var relatesMap = new Map();
     for (let aRel of relateEntities){
       relatesMap.set(aRel.entity.name, aRel);
@@ -93,7 +122,7 @@ export default {
     for (let relatEntity of relateEntities){
       var parentEntityName = "";
       if (relatEntity.parentEntity){
-        parentEntityName = this.buildParentEntityName(relatesMap, relatEntity, parentEntityName);
+        parentEntityName = this.buildParentEntityName(relatesMap, editClass, relatEntity, parentEntityName, entityMap, linkMap);
       }
       if (parentEntityName && parentEntityName !== "" && !parentEntityName.endsWith(".")){
         parentEntityName += ".";
@@ -131,11 +160,19 @@ export default {
         let paramMap = new Map();
         for (let param of aCommandService.parameters){
           param.isParameter = true;
-          paramMap.set(param.name, param);
+          let key = param.name;
+          if (param.relateName){
+            key = param.relateName;
+          }
+          paramMap.set(key, param);
         }
         aCommandService.parameters = [];
         for (let aParam of parameters){
-          let existParam = paramMap.get(aParam.name);
+          let key = aParam.name;
+          if (aParam.relateName){
+            key = aParam.relateName;
+          }
+          let existParam = paramMap.get(key);
           if (existParam != null){
             aParam.isParameter = true;
             aParam.type = existParam.type;

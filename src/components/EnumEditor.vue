@@ -7,8 +7,8 @@
             </div>
             <label for="enumName" class="col-sm-3 col-form-label-sm" v-if="hasAttrEnum">枚举名称:</label>
             <div class="col-sm-5" v-if="hasAttrEnum">
-                <input type="text" class="form-control col-form-label-sm" id="enumName" placeholder="请输入枚举名称"
-                v-model="editAttribute.attrEnum.enumName" >
+                <input type="text" class="form-control col-form-label-sm" id="name" placeholder="请输入枚举名称"
+                v-model="editAttribute.attrEnum.name" >
             </div>
         </div>
         <div v-if="hasAttrEnum" >

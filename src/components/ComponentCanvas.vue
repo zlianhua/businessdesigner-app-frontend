@@ -122,7 +122,7 @@ export default {
             for(let [k,v] of this.linkMap){
                 if(v.sourceId==id || v.targetId==id){
                     this.linkMap.delete(k);
-                    var link = cellUtil.findCellById(k,this.graph.getCells);
+                    var link = cellUtil.findCellById(k,this.graph.getCells());
                     link.remove();
                 }
             }
@@ -179,6 +179,7 @@ export default {
             var verticesTool = new joint.linkTools.Vertices();
             var segmentsTool = new joint.linkTools.Segments();
             var boundaryTool = new joint.linkTools.Boundary();
+            var removeButton = new joint.linkTools.Remove();
             let _this=this;
             var infoButton = new joint.linkTools.Button({
                 markup: [{
@@ -210,12 +211,13 @@ export default {
             var toolsView = new joint.dia.ToolsView({
                 tools: [
                     verticesTool, segmentsTool,
-                    boundaryTool, infoButton
+                    boundaryTool, infoButton,removeButton
                 ]
             });
             var linkView = link.findView(this.paper);
             if(linkView){
                 linkView.addTools(toolsView);
+                linkView.hideTools();
             }
         },
         resizeClassCell(cell){
@@ -230,6 +232,9 @@ export default {
             if(newHeight<100){
                 newHeight = 100;
             }
+            if(cell.type !== "uml.Class"){
+                newHeight+=60;    
+            }
             if(newHeight!=cell.attributes.size.height){
                 cell.resize(cell.attributes.size.width,newHeight);
             }
@@ -238,24 +243,55 @@ export default {
                 this.currentHighLight.highlight();
             }
         },
-        replaceToExternalEntity(entity){
-            entity.type="uml.ExternalClass";
-            var oldCell=cellUtil.findCellById(entity.id,this.graph.getCells);
-            var newCell=this.drawClass("externalClass",oldCell.attributes.name,oldCell.attributes.position.x,oldCell.attributes.position.y);
+        replaceEntityType(entity,type){
+            if(type === "externalClass"){
+                entity.type="uml.ExternalClass";
+            }else if(type === "abstractClass"){
+                entity.type="uml.Abstract";    
+            }else{
+                entity.type="uml.Class";  
+            } 
+            var oldCell=cellUtil.findCellById(entity.id,this.graph.getCells());
+            var newCell=this.drawClass(type,oldCell.attributes.name,oldCell.attributes.position.x,oldCell.attributes.position.y);
             newCell.set("attributes",oldCell.get("attributes"));
             newCell.attributes.size.width=oldCell.attributes.size.width;
             newCell.attributes.size.height=oldCell.attributes.size.height;
             var oldId = entity.id;
             var newId = newCell.id;
             for(let [k,v] of this.linkMap) {
-                if (v.targetId == oldId) {
+                if (v.targetId === oldId) {
                     v.targetId=newId;
-                    var link = cellUtil.findCellById(k,this.graph.getCells);
-                    link.target({ id:newId});
+                    var link = cellUtil.findCellById(k,this.graph.getCells());
+                    if(link){
+                        link.target({ id:newId});
+                    }
+                }
+                if (v.sourceId === oldId) {
+                    v.sourceId=newId;
+                    var link = cellUtil.findCellById(k,this.graph.getCells());
+                    if(link){
+                        link.source({ id:newId});
+                    }
                 }
             }
             entity.id = newId;
+            this.entityMap.delete(oldId);
+            this.entityMap.set(newId,entity);
             this.deleteCell(oldCell);
+            this.clickBlank();
+        },
+        clickBlank(){
+             if(null!=this.currentHighLight){
+                this.currentHighLight.unhighlight();
+            }
+            if(currentSelectButton){
+                currentSelectButton.style.border="";
+                currentSelectButton=null;
+            }
+            if(currentElementView){
+                currentElementView=null;
+            }
+            this.$eventHub.$emit ('showComponentProperties');
         }
     },
     mounted(){
@@ -297,6 +333,12 @@ export default {
             }
         },this);
         this.paper.on({
+            'link:mouseenter' : function(linkView){
+                linkView.showTools();
+            },
+            'link:mouseleave' : function(linkView){
+                linkView.hideTools();
+            },
             'blank:mousewheel DOMMouseScroll' : function(event){
                 if(event.ctrlKey === true){
                     event.preventDefault();
@@ -352,16 +394,7 @@ export default {
                 }
             },
             'blank:contextmenu' : function(evt, x, y) {
-                if(null!=this.currentHighLight){
-                    this.currentHighLight.unhighlight();
-                }
-                if(currentSelectButton){
-                    currentSelectButton.style.border="";
-                    currentSelectButton=null;
-                }
-                if(currentElementView){
-                    currentElementView=null;
-                }
+                this.clickBlank();
             },
             'blank:pointerdown': function(evt,x,y){
                 let scale = V(this.paper.viewport).scale();
@@ -463,6 +496,11 @@ export default {
                 this.dragStartPosition = null;
                 let entity = this.entityMap.get(elementView.model.id);
                 if(entity){
+                    if(elementView.model.attributes.type === "uml.Abstract"){
+                        entity.isAbstract = true;
+                    }else{
+                        entity.isAbstract = false;
+                    }
                     this.$eventHub.$emit ('classSelected',entity);
                 }
         
@@ -544,6 +582,16 @@ export default {
                 entityCell.set("name",currentClass.name);
             }
         });
+        this.$eventHub.$on('abstractChanged',function(currentClass){
+            let entityCell = cellUtil.findCellById(currentClass.id,_this.graph.getCells());
+            if(entityCell){
+                if(currentClass.isAbstract && entityCell.attributes.type !== "uml.Abstract"){
+                    _this.replaceEntityType(currentClass,"abstractClass");
+                }else{
+                    _this.replaceEntityType(currentClass,"class");
+                }
+            }
+        });
         this.$eventHub.$on('AttributesChanged',function(currentClass){
             let entityCell = cellUtil.findCellById(currentClass.id,_this.graph.getCells());
             if(entityCell){
@@ -599,7 +647,7 @@ export default {
             }
         });
         this.$eventHub.$on('replaceToExternalEntity',function(entity){
-            _this.replaceToExternalEntity(entity);
+            _this.replaceEntityType(entity,"externalClass");
         });
         this.$eventHub.$on('createLinkTool',function(link){
             _this.createLinkTool(link);

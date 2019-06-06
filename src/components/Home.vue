@@ -1,6 +1,6 @@
 <template>
   <p class="homeText">
-   欢迎使用亚信业务设计系统
+   欢迎使用业务设计系统
   </p>
 </template>
 <script>

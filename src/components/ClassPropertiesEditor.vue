@@ -163,6 +163,7 @@ export default {
             this.editClass.attributes.push(newRow);
             this.$refs.attributesTable.refresh();
             let _this=this;
+            this.currentAttribute = newRow;
             setTimeout(function(){_this.clickAttributeTableRow(_this.editClass.attributes.length-1)},20);
         },
         deleteAttribute(item){

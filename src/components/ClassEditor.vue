@@ -26,6 +26,16 @@
                                 </div>
                             </div>
                         </div>
+                        <div class="form-group row">
+                            <div class="col-sm-3 col-form-label-sm">是否抽象类:</div>
+                            <div class="col-sm-9">
+                                <b-form-checkbox
+                                    v-model = "editClass.isAbstract"
+                                    size="sm"
+                                    @change="abstractChanged"
+                                ></b-form-checkbox>
+                            </div>
+                        </div>
                     </form>
                 </b-tab>
                 <b-tab title="属性">
@@ -54,6 +64,22 @@ export default {
     name:'ClassEditor',
     props:['editClass','entityMap','linkMap'],
     methods: {
+        abstractChanged(){
+            let currentCell=null;
+            for(let[k,v] of this.entityMap){
+                if (v.id==this.editClass.id){
+                    currentCell = v;
+                    break;
+                }
+            }
+            this.editClass.isAbstract = !this.editClass.isAbstract;
+            if(currentCell.type === "uml.ExternalClass"){
+                event.target.value = this.editClass.isAbstract;
+                return;
+            }else{
+                this.$eventHub.$emit ('abstractChanged',this.editClass);
+            }
+        },
         nameChanged(event){
             let pkIdx=0;
             let primaryAttr = this.editClass.attributes.find(function(e1){
@@ -69,13 +95,16 @@ export default {
                     if(null!=primaryAttr) {
                         this.attrRows.splice(pkIdx);
                     }
-                    return isGeneralizationSource;
+                    break;
                 }
             }
+            let newName=event.target.value;
+            this.editClass.name = newName;
             if(isGeneralizationSource){
+                this.$eventHub.$emit ('ClassNameChanged',this.editClass);
                 return;
             }
-            let newName=event.target.value;
+            
             let oldValue = this.editClass.name;
             if(oldValue){
                 let oldKeyName = oldValue.charAt(0).toLowerCase()+oldValue.substr(1)+"Id";
@@ -95,7 +124,7 @@ export default {
                     return true;
                 }
             });
-            this.editClass.name = newName;
+            
             if(!existNewKey){
                 let newRow = {
                     name: newKeyName,
