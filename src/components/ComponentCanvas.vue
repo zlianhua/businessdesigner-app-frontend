@@ -1,31 +1,6 @@
 <template>
     <div>
-        <div>
-            <input type="image" src="/static/images/class.ico" id="btnClass" objType="Class" title="对象" @click="pressButton($event)"/>
-            <input type="image" src="/static/images/abstract-class.ico" id="btnAbstractClass" objType="Class" title="抽象对象" @click="pressButton($event);">
-            <input type="image" src="/static/images/external-class.ico" id="btnExternalClass" objType="Class" title="外部对象" @click="pressButton($event);">
-            <span>|</span>
-            <input type="image" src="/static/images/class-delete.ico" id="btnDeleteClass" title="删除业务对象" @click="deleteCell">
-            <span>|</span>
-            <input type="image" src="/static/images/generalization.ico" id="btnGeneralization" objType="association" title="继承" @click="pressButton($event);">
-            <input type="image" src="/static/images/association.ico" id="btnAssociation" objType="association" title="关联" @click="pressButton($event);">
-            <input type="image" src="/static/images/selfAssociation.ico" id="btnSelfAssociation" objType="association" title="自关联" @click="pressButton($event);">
-            <input type="image" src="/static/images/aggregation.ico" id="btnAggregation" objType="association" title="Aggregation" @click="pressButton($event);">
-            <input type="image" src="/static/images/composition.ico" id="btnComposition" objType="association" title="Composition" @click="pressButton($event);">
-            <span>|</span>
-            <button id="newComponent" @click="newComponent" title="新建构件"><font-awesome-icon icon="file-alt"/></button>
-            <button id="save" @click="saveComponent" title="保存构件"> <font-awesome-icon icon="save"/></button>
-            <button id="saveAs" @click="saveAsComponent" title="构件另存为"> <font-awesome-icon icon="share-square"/></button>
-            <button id="open" @click="openComponent" title="打开构件"> <font-awesome-icon icon="folder-open"/> </button>
-            <button id="delete" @click="deleteComponent" title="删除构件"><font-awesome-icon icon="trash"/></button>
-            <button id="getCode" @click="generateJavaCode" title="生成工程代码"><font-awesome-icon icon="coffee"/></button>
-            <button id="zoomIn" @click="zoomIn" title="放大"><font-awesome-icon icon="search-plus"/></button>
-            <button id="zoomOut" @click="zoomOut" title="缩小"><font-awesome-icon icon="search-minus"/></button>
-            <button id="resetZoom" @click="resetZoom" title="恢复原大小"><font-awesome-icon icon="search"/></button>
-        </div>
-        <div id="paperScrollableWrapper">
-            <div id="paper" tabindex="0"  @keydown="paperOnKeyDown"></div>
-        </div>
+        <div id="paper" tabindex="0"  @keydown="paperOnKeyDown"></div>
     </div>
 </template>
 <script>
@@ -36,7 +11,6 @@ const _ = require('lodash');
 const joint = require('jointjs');
 const V = joint.V;
 const g = joint.g;
-let graph;
 let paper;
 let graphScale = 1;
 let currentSelectButton = null;
@@ -46,39 +20,29 @@ const uml = joint.shapes.uml;
 let dragStartPosition;
 export default {
     name: 'ComponentCanvas',
-    props:['entityMap','linkMap'],
+    props:['graph','entityMap','linkMap'],
     data(){
         return{
             currentHighLight: this.currentHighLight
         }
     },
     methods:{
-        openComponent(){
-            let componentName = prompt("请输入构件名称:");
-            if(!componentName || componentName.indexOf(".")<0){
-                alert("构件名称必须包括包名。");
-                return;
+        resizePaper(sizeType){
+            let paperDiv = $("#paper");
+            if(sizeType === 'Max'){
+                paperDiv.width(1050); 
+            }else if(sizeType === 'Min') {  
+                paperDiv.width(0);
+            }else{
+                paperDiv.width(650);
             }
-            this.$eventHub.$emit ('openComponent',componentName,this.graph);
-        },
-        saveComponent(){
-            this.$eventHub.$emit ('saveComponent',this.graph);
-        },
-        saveAsComponent(){
-            this.$eventHub.$emit ('saveAsComponent',this.graph);
+            this.paper.setDimensions(paperDiv.width,paperDiv.height);
         },
         newComponent(){
             this.currentSelectButton=null;
             this.currentSelectCell = null;
             this.currentElementView=null;
             this.currentHighLight=null;
-            this.$eventHub.$emit ('newComponent',this.graph);
-        },
-        deleteComponent(){
-            this.$eventHub.$emit ('deleteComponent',this.graph);
-        },
-        generateJavaCode(){
-            this.$eventHub.$emit ('generateJavaCode');
         },
         paperOnKeyDown(e){
            if(e.keyCode == 46) {
@@ -86,8 +50,7 @@ export default {
                 this.deleteCell();
             }
         },
-        pressButton(event) {
-            let button = event.target;
+        pressButton(button) {
             if(currentSelectButton){
                 if (currentSelectButton===button){
                     return;
@@ -296,7 +259,6 @@ export default {
     },
     mounted(){
         this.graphScale = 1;
-        this.graph = new joint.dia.Graph();
         this.paper = new joint.dia.Paper({
             el: $('#paper'),
             width: $('#paper').width(),
@@ -576,6 +538,12 @@ export default {
         },this);
 
         let _this = this;
+        this.$eventHub.$on('pressButton',function(button){
+            _this.pressButton(button);
+        });
+        this.$eventHub.$on('deleteCell',function(){
+            _this.deleteCell();
+        });
         this.$eventHub.$on('ClassNameChanged',function(currentClass){
             let entityCell = cellUtil.findCellById(currentClass.id,_this.graph.getCells());
             if(entityCell){
@@ -652,6 +620,21 @@ export default {
         this.$eventHub.$on('createLinkTool',function(link){
             _this.createLinkTool(link);
         });
+        this.$eventHub.$on('resizePaper',function(type){
+            _this.resizePaper(type);
+        });
+        this.$eventHub.$on('newComponent',function(){
+            _this.newComponent();
+        });
+        this.$eventHub.$on('zoomIn',function(){
+            _this.zoomIn();
+        });
+        this.$eventHub.$on('zoomOut',function(){
+            _this.zoomOut();
+        });
+        this.$eventHub.$on('resetZoom',function(){
+            _this.resetZoom();
+        });
         $("#paper").mousemove(function(event) {
             if (_this.dragStartPosition){
               _this.paper.translate(
@@ -674,15 +657,10 @@ span {
     display: inline-block;
     vertical-align: top;
 }
-#paper-scrollable-wrapper {
-    overflow: visible;
-    width: 100%;
-    height: 100%;
-}
 
 #paper {
     border: 1px solid black; 
-    width: 600px;
-    height: 600px;
+    width: 650px;
+    height: 650px;
 }
 </style>

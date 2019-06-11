@@ -1,14 +1,47 @@
 <template>
     <b-container id="objectDiagram">
         <b-row>
-            <!--draw area-->
-            <b-col cols=7>
-                <ComponentCanvas :entityMap="entityMap" :linkMap="linkMap"/>
+            <b-col class="col-md-auto">
+                <input type="image" src="/static/images/class.ico" id="btnClass" objType="Class" title="对象" @click="pressButton($event)"/>
+                <input type="image" src="/static/images/abstract-class.ico" id="btnAbstractClass" objType="Class" title="抽象对象" @click="pressButton($event);">
+                <input type="image" src="/static/images/external-class.ico" id="btnExternalClass" objType="Class" title="外部对象" @click="pressButton($event);">
+                <input type="image" src="/static/images/class-delete.ico" id="btnDeleteClass" title="删除业务对象" @click="deleteCell">
             </b-col>
-            <b-col cols=5>
-                <ComponentEditor :entityMap ="entityMap" :linkMap="linkMap"/>
+            <b-col class="col-md-auto">    
+                <input type="image" src="/static/images/generalization.ico" id="btnGeneralization" objType="association" title="继承" @click="pressButton($event);">
+                <input type="image" src="/static/images/association.ico" id="btnAssociation" objType="association" title="关联" @click="pressButton($event);">
+                <input type="image" src="/static/images/selfAssociation.ico" id="btnSelfAssociation" objType="association" title="自关联" @click="pressButton($event);">
+                <input type="image" src="/static/images/aggregation.ico" id="btnAggregation" objType="association" title="Aggregation" @click="pressButton($event);">
+                <input type="image" src="/static/images/composition.ico" id="btnComposition" objType="association" title="Composition" @click="pressButton($event);">
+            </b-col>
+            <b-col class="col-md-auto">
+                <button id="newComponent" @click="newComponent" title="新建构件"><font-awesome-icon icon="file-alt"/></button>
+                <button id="save" @click="saveComponent" title="保存构件"> <font-awesome-icon icon="save"/></button>
+                <button id="saveAs" @click="saveAsComponent" title="构件另存为"> <font-awesome-icon icon="share-square"/></button>
+                <button id="open" @click="openComponent" title="打开构件"> <font-awesome-icon icon="folder-open"/> </button>
+                <button id="delete" @click="deleteComponent" title="删除构件"><font-awesome-icon icon="trash"/></button>
+                <button id="getCode" @click="generateJavaCode" title="生成工程代码"><font-awesome-icon icon="coffee"/></button>
+            </b-col>
+            <b-col class="col-md-auto">    
+                <button id="zoomIn" @click="zoomIn" title="放大"><font-awesome-icon icon="search-plus"/></button>
+                <button id="zoomOut" @click="zoomOut" title="缩小"><font-awesome-icon icon="search-minus"/></button>
+                <button id="resetZoom" @click="resetZoom" title="恢复原大小"><font-awesome-icon icon="search"/></button>
+            </b-col>
+            <b-col class="col col-lg-4" style="text-align:right">
+                <button @click="setPropertyArea('Max')"  title="扩展属性编辑区域"><font-awesome-icon icon="chevron-circle-left"/></button>
+                <button @click="setPropertyArea('Normal')"  title="恢复默认区域大小"><font-awesome-icon icon="pause-circle"/></button>
+                <button @click="setPropertyArea('Min')"  title="扩展对象编辑区域"><font-awesome-icon icon="chevron-circle-right"/></button>
             </b-col>
         </b-row>
+        <div class="row">
+            <!--draw area-->
+            <div class="col-sm-7" id="canvasCol">
+                <ComponentCanvas :graph="graph" :entityMap="entityMap" :linkMap="linkMap"/>
+            </div>
+            <div class="col-sm-5" id="propsCol" style="display:block">
+                <ComponentEditor :entityMap ="entityMap" :linkMap="linkMap"/>
+            </div>
+        </div>
   </b-container>
 </template>
 <script>
@@ -18,8 +51,11 @@ import axios from "axios";
 import cellUtil from "../cellUtil.js";
 import { setTimeout } from 'timers';
 const config = require('../../config/config.js');
+const _ = require('lodash');
+const joint = require('jointjs');
 let entityMap = new Map();
 let linkMap = new Map();
+let graph = new joint.dia.Graph();
 let component = {
     simpleName: "",
     basePackageName: "com.ai.bss",
@@ -38,6 +74,53 @@ let oldComponentName = null;
 export default {
     name: 'BusinessComponent',
     methods: {
+        pressButton(event){
+            this.$eventHub.$emit ('pressButton',event.target);
+        },
+        deleteCell(){
+            this.$eventHub.$emit ('deleteCell');
+        },
+        zoomIn(){
+            this.$eventHub.$emit ('zoomIn');
+        },
+        zoomOut(){
+            this.$eventHub.$emit ('zoomOut');
+        },
+        resetZoom(){
+            this.$eventHub.$emit ('resetZoom');
+        },
+        setPropertyArea(type){
+            let canvasCol = $("#canvasCol");
+            let propsCol = $("#propsCol");
+            if(type === 'Max'){
+                canvasCol.removeClass("col-sm-11");
+                propsCol.removeClass("col-sm-1");
+                canvasCol.removeClass("col-sm-7");
+                propsCol.removeClass("col-sm-5");
+                canvasCol.addClass("col-sm-1");
+                propsCol.addClass("col-sm-11");
+                propsCol.show();
+                this.$eventHub.$emit ('resizePaper','Min');
+            }else if(type === 'Min'){
+                canvasCol.removeClass("col-sm-1");
+                propsCol.removeClass("col-sm-11");
+                canvasCol.removeClass("col-sm-7");
+                propsCol.removeClass("col-sm-5");
+                canvasCol.addClass("col-sm-11");
+                propsCol.addClass("col-sm-1");
+                propsCol.hide();
+                this.$eventHub.$emit ('resizePaper','Max');
+            }else{
+                canvasCol.removeClass("col-sm-1");
+                propsCol.removeClass("col-sm-11");
+                canvasCol.removeClass("col-sm-11");
+                propsCol.removeClass("col-sm-1");
+                canvasCol.addClass("col-sm-7");
+                propsCol.addClass("col-sm-5");
+                propsCol.show();
+                this.$eventHub.$emit ('resizePaper','Normal');
+            }
+        },
         isComponentEntity(entity){
             for(let [k,v] of this.linkMap){
                 if(v.sourceId==entity.id){
@@ -95,7 +178,7 @@ export default {
             }
             return false;
         },
-        saveAsComponent(graph){
+        saveAsComponent(){
             if (!this.component.simpleName){
                 alert("请打开构件!");
                 return;
@@ -117,21 +200,27 @@ export default {
             }).then(
                 function (returnValue) {
                     let data = returnValue.data;
-                    graph.fromJSON(JSON.parse(data.oomXml));
+                    _this.graph.fromJSON(JSON.parse(data.oomXml));
                     if( data.entities.length>0){
                         _this.$eventHub.$emit('classSelected',data.entities[0]);
                     }
-                    _this.setComponent(data,graph.getCells());
+                    _this.setComponent(data,_this.graph.getCells());
                     alert(_this.component.simpleName+"构件另存为"+newComponentName+"成功!");
                 }
             ).catch(
                 function(error){
-                    alert("构件另存失败。原因："+error.response.data);
+                    let errorInfo ="未知";
+                    if(error.response){
+                        errorInfo = error.response.data;
+                    }else{
+                        errorInfo = error;
+                    }
+                    alert("构件另存失败。原因："+errorInfo);
                 }
             ); 
 
         },
-        saveComponent(graph){
+        saveComponent(){
             if (!this.component.simpleName){
                 alert("请新建或打开已有组件并编辑后保存!");
                 return;
@@ -156,7 +245,7 @@ export default {
                 return;
             }
 
-            var jsonStr = JSON.stringify(graph.toJSON());
+            var jsonStr = JSON.stringify(this.graph.toJSON());
             this.component.oomXml =jsonStr;
             this.component.associations=[];
             for(let [k,v] of this.linkMap){
@@ -180,11 +269,22 @@ export default {
                 }
             ).catch(
                 function(error){
-                    alert("构件保存失败。原因："+error.response.data);
+                    let errorInfo ="未知";
+                    if(error.response){
+                        errorInfo = error.response.data;
+                    }else{
+                        errorInfo = error;
+                    }
+                    alert("构件保存失败。原因："+errorInfo);
                 }
             ); 
         },
-        openComponent(componentName,graph){
+        openComponent(){
+            let componentName = prompt("请输入构件名称:");
+            if(!componentName || componentName.indexOf(".")<0){
+                alert("构件名称必须包括包名。");
+                return;
+            }
             let _this=this;
             let aUrl='/component/open/'+componentName;
             axios({
@@ -197,11 +297,11 @@ export default {
             }).then(
                 function (returnValue) {
                     let data = returnValue.data;
-                    graph.fromJSON(JSON.parse(data.oomXml));
+                    _this.graph.fromJSON(JSON.parse(data.oomXml));
                     if( data.entities.length>0){
                         _this.$eventHub.$emit('classSelected',data.entities[0]);
                     }
-                    _this.setComponent(data,graph.getCells());
+                    _this.setComponent(data,_this.graph.getCells());
                 }
             ).catch(
                 function(error){
@@ -215,7 +315,7 @@ export default {
                 }
             ); 
         },
-        newComponent(graph){
+        newComponent(){
             this.component ={
                 simpleName: "",
                 basePackageName: "com.ai.bss",
@@ -228,12 +328,14 @@ export default {
                 associations: [],
                 oomXml: ""
             }
-            graph.clear();
+            this.graph.clear();
             this.entityMap = new Map();
             this.linkMap = new Map();
             this.oldComponentName=null;
+            this.$eventHub.$emit ('newComponent');
+
         },
-        deleteComponent(graph){
+        deleteComponent(){
             if (!this.component || !this.component.simpleName){
                 alert("请先打开需要删除的构件!");
                 return;
@@ -253,12 +355,18 @@ export default {
                 responseType: 'text'
             }).then(
                 function (returnValue) {
-                    _this.newComponent(graph);
+                    _this.newComponent();
                     alert(_this.component.simpleName+"构件删除成功!");
                 }
             ).catch(
                 function(error){
-                    alert("构件删除失败。原因："+error.response.data);
+                    let errorInfo ="未知";
+                    if(error.response){
+                        errorInfo = error.response.data;
+                    }else{
+                        errorInfo = error;
+                    }
+                    alert("构件删除失败。原因："+errorInfo);
                 }
             ); 
         },
@@ -285,7 +393,13 @@ export default {
                 }
             ).catch(
                 function(error){
-                    alert(_this.component.simpleName+"代码生成失败!\n"+error.response.data);
+                    let errorInfo ="未知";
+                    if(error.response){
+                        errorInfo = error.response.data;
+                    }else{
+                        errorInfo = error;
+                    }
+                    alert(_this.component.simpleName+"代码生成失败!\n"+errorInfo);
                 }
             ); 
         },
@@ -338,29 +452,12 @@ export default {
             entityMap: entityMap,
             linkMap: linkMap,
             baseURL: baseURL,
+            graph: graph,
             oldComponentName: oldComponentName
         }
     },
     mounted(){
         let _this = this;
-        this.$eventHub.$on('openComponent',function(componentName,graph){
-            _this.openComponent(componentName,graph);
-        });
-        this.$eventHub.$on('saveComponent',function(graph){
-            _this.saveComponent(graph);
-        });
-        this.$eventHub.$on('saveAsComponent',function(graph,newComponentName){
-            _this.saveAsComponent(graph,newComponentName);
-        });
-        this.$eventHub.$on('newComponent',function(graph){
-            _this.newComponent(graph);
-        });
-        this.$eventHub.$on('deleteComponent',function(graph){   
-            _this.deleteComponent(graph);
-        });
-        this.$eventHub.$on('generateJavaCode',function(){
-            _this.generateJavaCode();
-        });
         this.$eventHub.$on('componentNameChanged',function(){
             _this.component.name = _this.component.basePackageName+"."+_this.component.simpleName;
         });     
@@ -371,4 +468,5 @@ export default {
     }
 }
 </script>
+
 

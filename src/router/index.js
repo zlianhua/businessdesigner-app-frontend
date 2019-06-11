@@ -9,7 +9,7 @@ export default new Router({
   mode: 'history',
   routes: [
     {
-      path: '/',
+      path: '*',
       name: 'Home',
       component: Home
     },
@@ -22,11 +22,6 @@ export default new Router({
       path: '/application',
       name: 'BusinessApplication',
       component: BusinessApplication
-    },
-    {
-      path: '*',
-      name: 'NotFound',
-      component: NotFound
     }
   ]
 })

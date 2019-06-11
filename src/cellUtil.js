@@ -84,9 +84,44 @@ export default {
       }
     }
   },
+  findExternalClassAttributes(entity, attributes, entityMap, linkMap){
+    for (let [, v] of linkMap){
+      if (v.targetId === entity.id){
+        let source = entityMap.get(v.sourceId);
+        if (source.type === "uml.ExternalClass"){
+          let attrName = source.name;
+          let idx = attrName.lastIndexOf(".") + 1;
+          attrName = attrName.substr(idx);
+          attrName = attrName.charAt(0).toLowerCase() + attrName.substr(1) + "Id";
+          
+          if (v.type === "Aggregation" || v.type === "Composition"){
+            attrName = attrName + "List";          
+          }
+          let hasThisAttr = false;
+          for (let aAttr of attributes){
+            if (aAttr.name === attrName){
+              hasThisAttr = true;
+              break;
+            }
+          }
+          if (!hasThisAttr){
+            let attr = {}
+            attr.name = attrName;
+            attr.type = "Long";
+            attributes.push(attr);
+          }
+        }
+      }
+    }
+    return attributes;
+  },
   createParameters(editClass, entityMap, linkMap){
     var parameters = [];
-    var attributes = editClass.attributes;
+    var attributes = [];
+    for (let attr of editClass.attributes){
+      attributes.push(attr);
+    }
+    attributes = this.findExternalClassAttributes(editClass, attributes, entityMap, linkMap);
     attributes = this.findAttributesOfSuper(editClass.id, attributes, false, entityMap, linkMap);
     _.each(attributes, function(attr){
       if (!attr.isPrimary){

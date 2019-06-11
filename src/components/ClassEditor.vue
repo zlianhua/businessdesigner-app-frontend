@@ -2,7 +2,7 @@
     <div>
         <b-card no-body bg-variant="light" class="col-form-label-sm" small card>
             <b-tabs card>
-                <b-tab title="基本信息" active>
+                <b-tab title="基本信息"  active>
                     <form @submit.prevent>
                         <div class="form-group row">
                             <label for="name" class="col-sm-3 col-form-label-sm">名称:</label>
