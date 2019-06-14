@@ -195,7 +195,7 @@ export default {
             if(newHeight<100){
                 newHeight = 100;
             }
-            if(cell.type !== "uml.Class"){
+            if(cell.attributes.type !== "uml.Class"){
                 newHeight+=60;    
             }
             if(newHeight!=cell.attributes.size.height){

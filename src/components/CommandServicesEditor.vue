@@ -14,6 +14,7 @@
             <template slot="action" slot-scope="row">
                     <select v-model="row.item.action" class="form-control col-form-label-sm">
                         <option>Create</option>
+                        <option>Create_With_Member</option>
                         <option>Update</option>
                         <option>Create_Member</option>
                         <option>Update_Member</option>

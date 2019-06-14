@@ -148,6 +148,11 @@ export default {
                 name: "",
                 type: "String",
                 attrValidate:{
+                    required:false,
+                    email:false,
+                    password:false,
+                    minLength:"",
+                    maxLength:"",
                     valueFrom: "",
                     valueTo: "",
                     interval: "",
