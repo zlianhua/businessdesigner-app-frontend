@@ -10,6 +10,12 @@
                     <label class="form-control col-form-label-sm" nowrap>{{row.item.name}}</label>
                 </span>
             </template>
+            <template slot="isCreateQueryModel" slot-scope="row">
+                <b-form-checkbox
+                    v-model = "row.item.isCreateQueryModel" 
+                    size="sm"
+                />
+            </template>
             <template slot="actions" slot-scope="row">
                 <button @click="deleteQueryService(row.index)">
                 <font-awesome-icon icon="trash"/>
@@ -112,6 +118,7 @@ export default {
             }
             let method={
                 name:"",
+                isCreateQueryModel: false,
                 parameters:parameters
             }
             this.editClass.queryServices.push(method);
@@ -157,9 +164,11 @@ export default {
                     count++;
                 }
                 if(methodNameString.endsWith("And")){
-                    methodNameString = methodNameString.replace("And","");
+                    let idx = methodNameString.lastIndexOf("And");
+                    methodNameString = methodNameString.substring(0,idx);
                 }else if(methodNameString.endsWith("Or")){
-                    methodNameString = methodNameString.replace("Or","");
+                     let idx = methodNameString.lastIndexOf("Or");
+                    methodNameString = methodNameString.substring(0,idx);
                 }
                 if(methodNameString!=""){
                     methodNameString="findBy"+methodNameString;
@@ -223,6 +232,11 @@ export default {
                     key: 'name',
                     label:'请编辑参数生成名称',
                     sortable: true
+                },
+                {
+                    key: 'isCreateQueryModel',
+                    label:'是否生成查询弹出页面',
+                    sortable: false
                 },
                 {
                     key: 'actions',

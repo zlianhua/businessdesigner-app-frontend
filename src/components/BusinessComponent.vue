@@ -237,7 +237,7 @@ export default {
                 alert("请设置根对象!")
                 return;
             }else if(rootEntityCount>1){
-                alert(rootEntityCount+ "跟对象数量只能有一个!")
+                alert("根对象数量只能有一个!")
                 return;
             }
 
@@ -418,6 +418,8 @@ export default {
                 oomXml: ""
             };
             this.oldComponentName = this.component.name;
+            this.entityMap.clear();
+            this.linkMap.clear();
             for(let entity of data.entities){
                 if(!entity.name.endsWith("CharValue")){
                     var cellEntity = cellUtil.findCellById(entity.id, cells);

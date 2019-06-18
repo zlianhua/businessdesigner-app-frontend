@@ -112,14 +112,25 @@ export default {
                 name: className,
                 attrs: {}
             };
+            let newEntity ={id:null,
+                name:className,
+                modalQueryName:'',
+                attributes:[],
+                annotations:[],
+                commandServices:[],
+                queryServices:[]
+            };
             let aNewClass;
             if(classType==="class"){
                 aNewClass = new uml.Class(option);
-            }else if (classType==="externalClass"){                                                                                                                                                      
+            }else if (classType==="externalClass"){
                 aNewClass = new uml.ExternalClass(option);
             }else if (classType==="abstractClass"){
                 aNewClass = new uml.Abstract(option);
+                newEntity.isAbstract = true;
             }
+            newEntity.id = aNewClass.id;
+            newEntity.type = aNewClass.get("type");
             aNewClass.attributes.attrs['.uml-class-name-rect'].fill=fillColor;
             aNewClass.attributes.attrs['.uml-class-attrs-rect'].fill=fillColor;
             aNewClass.attributes.attrs['.uml-class-methods-rect'].fill=fillColor;
@@ -127,15 +138,7 @@ export default {
             aNewClass.attributes.attrs['.uml-class-attrs-rect'].stroke=strokeColor;
             aNewClass.attributes.attrs['.uml-class-methods-rect'].stroke=strokeColor;
             this.graph.addCell(aNewClass);
-            this.entityMap.set(aNewClass.id,
-                {id:aNewClass.id,
-                name:className,
-                type:aNewClass.get("type"),
-                attributes:[],
-                annotations:[],
-                commandServices:[],
-                queryServices:[]
-                });
+            this.entityMap.set(aNewClass.id,newEntity);
             return aNewClass;            
         },
         createLinkTool(link){

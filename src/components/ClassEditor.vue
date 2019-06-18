@@ -18,7 +18,7 @@
                                 v-model = "editClass.description" required>
                             </div>
                         </div>
-                       <div class="form-group row">
+                        <div class="form-group row" v-if="editClass.type !== 'uml.ExternalClass'">
                             <div class="col-sm-3 col-form-label-sm">是否根对象:</div>
                             <div class="col-sm-9">
                                 <div class="form-check">
@@ -26,14 +26,21 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="form-group row">
-                            <div class="col-sm-3 col-form-label-sm">是否抽象类:</div>
+                        <div class="form-group row" v-if="editClass.type !== 'uml.ExternalClass'">
+                            <div class="col-sm-3 col-form-label-sm" >是否抽象类:</div>
                             <div class="col-sm-9">
                                 <b-form-checkbox
                                     v-model = "editClass.isAbstract"
                                     size="sm"
                                     @change="abstractChanged"
                                 ></b-form-checkbox>
+                            </div>
+                        </div>
+                        <div class="form-group row" v-if="editClass.type == 'uml.ExternalClass'">
+                            <label for="modalQueryName" class="col-sm-3 col-form-label-sm">弹出查询名称:</label>
+                            <div class="col-sm-9">
+                                <input type="text" class="form-control col-form-label-sm" id="modalQueryName" placeholder="请输入弹出查询名称" 
+                                v-model = "editClass.modalQueryName" required>
                             </div>
                         </div>
                     </form>

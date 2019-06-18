@@ -71,7 +71,6 @@ export default {
             }
             let aUrl="/application/create/"+this.oldApplicationName;
             let _this=this;
-            console.log(this.application);
             axios({
                 method: 'POST',
                 baseURL: this.baseURL,
