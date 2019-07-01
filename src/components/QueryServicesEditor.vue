@@ -16,6 +16,13 @@
                     size="sm"
                 />
             </template>
+            <template slot="isTypeQuery" slot-scope="row">
+                <b-form-checkbox
+                    v-model = "row.item.isTypeQuery" 
+                    size="sm"
+                    @change.native="changeTypeQuery(row.item)"
+                />
+            </template>
             <template slot="actions" slot-scope="row">
                 <button @click="deleteQueryService(row.index)">
                 <font-awesome-icon icon="trash"/>
@@ -34,7 +41,7 @@
                 <template slot="isParameter" slot-scope="row">
                     <b-form-checkbox
                         v-model = "row.item.isParameter" 
-                        size="sm" @change="refreshQueryServiceName(row.item,$event,true)"
+                        size="sm" @change.native="refreshQueryServiceName(row.item,$event,true)"
                     />
                 </template>
                 <template slot="isNullable" slot-scope="row">
@@ -119,6 +126,7 @@ export default {
             let method={
                 name:"",
                 isCreateQueryModel: false,
+                isTypeQuery: false,
                 parameters:parameters
             }
             this.editClass.queryServices.push(method);
@@ -129,6 +137,30 @@ export default {
             item.condition = event.target.value;
             this.refreshQueryServiceName();
         },
+        changeTypeQuery(item){
+            if(item.isTypeQuery){
+                item.name = item.name.replace(/findBy/g,"findByTypeAnd");
+                item.name = item.name.replace(/\(/g,"(String type, ");
+                if(item.parameters[0].name !== "type"){
+                    let parameter={
+                        name:"type",
+                        type:"String",
+                        isParameter:true,
+                        condition:"",
+                        relation:"And",
+                        sort:"",
+                        isNullable:false
+                    }
+                    item.parameters.splice(0,0,parameter);
+                }
+            }else{
+                item.name = item.name.replace(/TypeAnd/g,"");
+                item.name = item.name.replace(/String type, /g,"");
+                if(item.parameters[0].name === "type"){
+                    item.parameters.splice(0,1);
+                }
+            }
+        },
         refreshQueryServiceName: function(item,event,isParameterChanged){
             if(this.currentQueryService.parameters.length>0){
                 let methodNameString ="";
@@ -138,9 +170,6 @@ export default {
                 this.currentQueryService.name="";
                 for(let parameter of this.currentQueryService.parameters){
                     let cName=parameter.name.replace(/\b\w/g, function(l){ return l.toUpperCase() });
-                    if(isParameterChanged && item.name === parameter.name) {
-                        parameter.isParameter = !parameter.isParameter;
-                    }
                     if(parameter.isParameter){
                         methodNameString+=cName;
                         if(paramString && paramString!=""){
@@ -235,7 +264,12 @@ export default {
                 },
                 {
                     key: 'isCreateQueryModel',
-                    label:'是否生成查询弹出页面',
+                    label:'ModalPage',
+                    sortable: false
+                },
+                {
+                    key: 'isTypeQuery',
+                    label:'子对象类型',
                     sortable: false
                 },
                 {

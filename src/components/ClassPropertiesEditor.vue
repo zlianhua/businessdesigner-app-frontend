@@ -139,9 +139,12 @@ export default {
     props:['editClass'],
     methods:{
         showAttributeDetail(attribute,index){
-            this.currentAttribute = attribute;
-            this.isShowAttributeProperties = true;
-            this.currentAttributeIdx = index;
+            if(this.currentAttribute!==attribute){
+                this.$eventHub.$emit ('newAttributesSelected',attribute);
+                this.currentAttribute = attribute;
+                this.isShowAttributeProperties = true;
+                this.currentAttributeIdx = index;
+            }
         },
         addAttribute(){
             var newRow = {

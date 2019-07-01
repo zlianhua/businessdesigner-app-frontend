@@ -6,12 +6,12 @@
                 <input class="form-check-input" type="checkbox" id="hasAttrEnum" @change="hasAttrEnumChanged($event)" v-model="hasAttrEnum">
             </div>
             <label for="enumName" class="col-sm-3 col-form-label-sm" v-if="hasAttrEnum">枚举名称:</label>
-            <div class="col-sm-5" v-if="hasAttrEnum">
+            <div class="col-sm-5" v-if="hasAttrEnum && null!==editAttribute.attrEnum">
                 <input type="text" class="form-control col-form-label-sm" id="name" placeholder="请输入枚举名称"
                 v-model="editAttribute.attrEnum.name" >
             </div>
         </div>
-        <div v-if="hasAttrEnum" >
+        <div v-if="hasAttrEnum && editAttribute.attrEnum!=null" >
             <div class="form-group row">
                 <label for="hasCode" class="col-sm-3 col-form-label-sm">定义代码:</label>
                 <div class="col-sm-1">
@@ -107,11 +107,14 @@ export default {
         }
     },
     mounted(){
-        if(this.editAttribute.attrEnum){
-            this.hasAttrEnum = true;
-        }else{
-            this.hasAttrEnum = false;
-        }
+        let _this = this;
+        this.$eventHub.$on('newAttributesSelected',function(attribute){
+           if(attribute.attrEnum){
+                _this.hasAttrEnum = true;
+            }else{
+                _this.hasAttrEnum = false;
+            }
+        });
     }
 }
 </script>
