@@ -7,7 +7,7 @@
                         <label for="name" class="col-sm-3 col-form-label-sm">名称:</label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control col-form-label-sm" id="name" placeholder="请输入名称" 
-                            v-model = "application.name" >
+                            v-model = "application.name" @change="simpleNameChanged">
                         </div>
                     </div>
                     <div class="form-group row">
@@ -173,6 +173,9 @@ export default {
         },
         versionChanged(item,event){
             item.version = event.target.value;
+        },
+        simpleNameChanged(){
+            this.$eventHub.$emit ('applicationNameChanged');
         }
     }
 }

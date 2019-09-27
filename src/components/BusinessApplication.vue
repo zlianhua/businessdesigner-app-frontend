@@ -22,6 +22,7 @@ import { setTimeout } from 'timers';
 const config = require('../../config/config.js');
 let baseURL = 'http://'+config.metaDataServer.host+":"+config.metaDataServer.port;
 let oldApplicationName = null;
+let isNew = true;
 let application = {
         name: "",
         version: "0.1-snapshot",
@@ -55,6 +56,7 @@ export default {
             }).then(
                 function (returnValue) {
                     _this.application = returnValue.data;
+                    this.isNew = false;
                     alert(_this.application.name+"应用另存为"+newApplicationName+"成功!");
                 }
             ).catch(
@@ -82,6 +84,7 @@ export default {
             }).then(
                 function (returnValue) {
                     _this.oldApplicationName = _this.application.name;
+                    _this.isNew = false;
                     alert(_this.application.name+"应用保存成功!");
                 }
             ).catch(
@@ -109,6 +112,7 @@ export default {
                 function (returnValue) {
                     _this.application = returnValue.data;
                     _this.oldApplicationName = _this.application.name;
+                    _this.isNew = false;
                 }
             ).catch(
                 function(error){
@@ -131,6 +135,7 @@ export default {
                 kafkaKeySerializer: "org.apache.kafka.common.serialization.StringSerializer",
                 kafkaValueSerializer: "org.springframework.kafka.support.serializer.JsonSerializer"
             }
+            this.isNew = true;
             this.oldApplicationName=null;
         },
         deleteApplication(graph){
@@ -213,14 +218,57 @@ export default {
                     alert(_this.application.name+"UI代码生成失败!\n"+error.response.data);
                 }
             ); 
+        },
+        existApplication(){
+            let aUrl='/application/isExist/'+this.application.name;
+            let _this=this;
+            return axios({
+                method: 'GET',
+                baseURL: this.baseURL,
+                url: aUrl,
+                headers: {'Content-Type': 'application/json'},
+                responseEncoding: 'utf8', 
+                responseType: 'text'
+            }).then(
+                function (returnValue) {
+                  return returnValue.data
+                }
+            ).catch(
+                function(error){
+                    let errorInfo ="未知";
+                    if(error.response){
+                        errorInfo = error.response.data;
+                    }else{
+                        errorInfo = error;
+                    }
+                    alert("查询应用是否存在失败。原因："+errorInfo);
+                }
+            ); 
         }
     },
     data(){
         return {
             application: application,
             baseURL: baseURL,
+            isNew: isNew,
             oldApplicationName: oldApplicationName
         }
+    },
+    mounted(){
+        let _this = this;
+        this.$eventHub.$on('applicationNameChanged',function(){
+            if(_this.isNew){
+                //检查该构件是否存在，存在则需要换名字
+                _this.existApplication().then(
+                    function(isExistComp){
+                        if(isExistComp){
+                            alert("该构件已存在，请修改构建路径或构件名称！")
+                            _this.application.name = null
+                        }
+                    }
+                )
+            }
+        });     
     },
     components:{
         ApplicationPropertyEditor
