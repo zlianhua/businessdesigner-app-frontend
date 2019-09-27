@@ -11,6 +11,7 @@
       <b-navbar-nav>
         <b-nav-item :to="{ name: 'BusinessComponent' }">业务构件</b-nav-item>
         <b-nav-item v-if="showBusinessApplication" :to="{ name: 'BusinessApplication' }">业务应用</b-nav-item>
+        <b-nav-item v-if="showBusinessRules" :to="{ name: 'BusinessRules' }">业务规则</b-nav-item>
       </b-navbar-nav>
     </b-navbar>
   </div>
@@ -18,11 +19,13 @@
 <script>
 const config = require('../../config/config.js');
 let showBusinessApplication = config.showBusinessApplication;
+let showBusinessRules = config.showBusinessRules;
 export default {
   name: 'Navbar',
   data(){
     return {
-      showBusinessApplication: showBusinessApplication
+      showBusinessApplication: showBusinessApplication,
+      showBusinessRules:showBusinessRules
     }
   }
 };

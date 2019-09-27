@@ -188,7 +188,7 @@ export default {
         },
         resizeClassCell(cell){
             let newHeight = 0;
-            let perLineHight = 13.5;
+            let perLineHight = 20;
             if(cell.attributes.attributes){
                 newHeight = newHeight + cell.attributes.attributes.length*perLineHight;
             }
@@ -199,7 +199,7 @@ export default {
                 newHeight = 100;
             }
             if(cell.attributes.type !== "uml.Class"){
-                newHeight+=60;    
+                newHeight+=80;    
             }
             if(newHeight!=cell.attributes.size.height){
                 cell.resize(cell.attributes.size.width,newHeight);

@@ -13,11 +13,11 @@
             </template>
             <template slot="action" slot-scope="row">
                     <select v-model="row.item.action" class="form-control col-form-label-sm">
-                        <option>Create</option>
-                        <option>Create_With_Member</option>
-                        <option>Update</option>
-                        <option>Create_Member</option>
-                        <option>Update_Member</option>
+                        <option>CREATE</option>
+                        <option>CREATE_WITH_MEMBER</option>
+                        <option>UPDATE</option>
+                        <option>CREATE_MEMBER</option>
+                        <option>UPDATE_MEMBER</option>
                     </select>
             </template>    
             <template slot="publishEvent" slot-scope="row">

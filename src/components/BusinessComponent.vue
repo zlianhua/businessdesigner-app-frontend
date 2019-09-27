@@ -312,6 +312,7 @@ export default {
                         errorInfo = error;
                     }
                     alert("业务构件打开失败。原因："+errorInfo);
+                    throw error;
                 }
             ); 
         },
@@ -400,6 +401,7 @@ export default {
                         errorInfo = error;
                     }
                     alert(_this.component.simpleName+"代码生成失败!\n"+errorInfo);
+                    throw error;
                 }
             ); 
         },

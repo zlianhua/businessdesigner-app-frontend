@@ -20,6 +20,7 @@
     "ajv": "^6.9.1",
     "axios": "^0.18.0",
     "bootstrap-vue": "^2.0.0-rc.13",
+    "dmn-js": "^6.3.3",
     "jointjs": "^2.2.1",
     "vee-validate": "^2.2.10",
     "velocityjs": "^1.1.3",

@@ -3,6 +3,7 @@ import Router from 'vue-router';
 import Home from '@/components/Home';
 import BusinessComponent from '@/components/BusinessComponent';
 import BusinessApplication from '@/components/BusinessApplication';
+import BusinessRules from '@/components/BusinessRules';
 import NotFound from '@/components/error-pages/NotFound';
 Vue.use(Router)
 export default new Router({
@@ -22,6 +23,11 @@ export default new Router({
       path: '/application',
       name: 'BusinessApplication',
       component: BusinessApplication
+    },
+    {
+      path: '/rules',
+      name: 'BusinessRules',
+      component: BusinessRules
     }
   ]
 })

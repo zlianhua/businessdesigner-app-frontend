@@ -64,6 +64,12 @@
                                 v-model = "currentAttribute.type"></b-form-select>
                             </div>
                         </div>
+                        <div class="form-group row">
+                            <label for="isLongText" class="col-sm-4 col-form-label-sm">是否大文本:</label>
+                            <div class="col-sm-8">
+                                 <input class="form-check-input" type="checkbox" id="isLongText" v-model = "currentAttribute.isLongText">
+                            </div>
+                        </div>
                     </form>
                 </b-tab>
                 <b-tab title="注解">
@@ -140,8 +146,8 @@ export default {
     methods:{
         showAttributeDetail(attribute,index){
             if(this.currentAttribute!==attribute){
-                this.$eventHub.$emit ('newAttributesSelected',attribute);
                 this.currentAttribute = attribute;
+                this.$eventHub.$emit ('newAttributesSelected',attribute);
                 this.isShowAttributeProperties = true;
                 this.currentAttributeIdx = index;
             }
@@ -166,7 +172,8 @@ export default {
                 isPrimary: false,
                 isCharSpec: false,
                 annotations:[],
-                attrEnum:null
+                attrEnum:null,
+                isLongText:false
             };
             this.editClass.attributes.push(newRow);
             this.$refs.attributesTable.refresh();
@@ -290,7 +297,8 @@ export default {
                                         isPrimary: false,
                                         isCharSpec: false,
                                         annotations:[],
-                                        attrEnum:null
+                                        attrEnum:null,
+                                        isLongText:false
                                     };
                                     _this.editClass.attributes.push(newRow);
                                 })
@@ -377,7 +385,8 @@ export default {
                                 isPrimary: false,
                                 isCharSpec: false,
                                 annotations:[],
-                                attrEnum:null
+                                attrEnum:null,
+                                isLongText:false
                             };
                             _this.editClass.attributes.push(newRow);
                         })

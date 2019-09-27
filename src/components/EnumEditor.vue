@@ -108,6 +108,11 @@ export default {
     },
     mounted(){
         let _this = this;
+        if(_this.editAttribute.attrEnum){
+            _this.hasAttrEnum = true;
+        }else{
+            _this.hasAttrEnum = false;
+        }
         this.$eventHub.$on('newAttributesSelected',function(attribute){
            if(attribute.attrEnum){
                 _this.hasAttrEnum = true;

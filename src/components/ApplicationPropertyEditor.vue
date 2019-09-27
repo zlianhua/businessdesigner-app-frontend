@@ -18,13 +18,6 @@
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label for="artifactId" class="col-sm-3 col-form-label-sm">artifactId:</label>
-                        <div class="col-sm-9">
-                            <input type="text" class="form-control col-form-label-sm" id="artifactId" placeholder="请输入artifactId" 
-                            v-model = "application.artifactId" required>
-                        </div>
-                    </div>
-                    <div class="form-group row">
                         <label for="version" class="col-sm-3 col-form-label-sm">版本:</label>
                         <div class="col-sm-9">
                             <input type="text" class="form-control col-form-label-sm" id="version" placeholder="请输入版本" 

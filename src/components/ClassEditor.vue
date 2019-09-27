@@ -147,7 +147,8 @@ export default {
                     isPrimary: true,
                     isCharSpec: false,
                     annotations:[],
-                    attrEnum:{}
+                    attrEnum:{},
+                    isLongText:false
                 };
                 this.editClass.attributes.unshift(newRow);
             }

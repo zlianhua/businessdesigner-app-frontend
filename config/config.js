@@ -3,7 +3,8 @@ const config = {
       host: 'localhost',
       port: '8083'
     },
-    showBusinessApplication: true
+    showBusinessApplication: true,
+    showBusinessRules: true
 };
    
 module.exports = config;
