@@ -40,10 +40,10 @@ export default {
                 return;
             }
             let newApplicationName = prompt("请输入新应用名称：");
-            if(!newApplicationName || newApplicationName.indexOf(".")<0){
-                alert("应用名称必须包括包名。");
-                return;
-            }
+            // if(!newApplicationName || newApplicationName.indexOf(".")<0){
+            //     alert("应用名称必须包括包名。");
+            //     return;
+            // }
             let aUrl="/application/saveAs/"+this.application.name+"/"+newApplicationName;
             let _this=this;
             axios({
@@ -95,10 +95,10 @@ export default {
         },
         openApplication(){
             let applicationName = prompt("请输入应用名称:");
-            if(!applicationName || applicationName.indexOf(".")<0){
-                alert("应用名称必须包括包名。");
-                return;
-            }
+            // if(!applicationName || applicationName.indexOf(".")<0){
+            //     alert("应用名称必须包括包名。");
+            //     return;
+            // }
             let _this=this;
             let aUrl='/application/open/'+applicationName;
             axios({

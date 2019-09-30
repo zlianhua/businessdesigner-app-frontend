@@ -324,6 +324,18 @@ export default {
     }
     return retAttr;
   },
+  findPrimaryAttr: function(entity, entityMap, linkMap){
+    let retAttr = null;
+    let attributes = entity.attributes;
+    attributes = this.findAttributesOfSuper(entity.id, attributes, false, entityMap, linkMap);
+    for (let attr of attributes){
+      if (attr.isPrimary){
+        retAttr = attr;
+        break;
+      }
+    }
+    return retAttr;
+  },
   findEntityBySimpleName: function(entityMap, entitySimpleName){
     let retEntity = null;
     for (let [, v] of entityMap){

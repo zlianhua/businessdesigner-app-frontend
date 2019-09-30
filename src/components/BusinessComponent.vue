@@ -217,6 +217,7 @@ export default {
                         errorInfo = error;
                     }
                     alert("构件另存失败。原因："+errorInfo);
+                    throw error;
                 }
             ); 
 
@@ -266,7 +267,7 @@ export default {
             }).then(
                 function (returnValue) {
                     _this.oldComponentName = _this.component.basePackageName+"."+_this.component.simpleName
-                    this.isNew = false
+                    _this.isNew = false
                     alert(_this.component.simpleName+"构件保存成功!");
                 }
             ).catch(
@@ -278,6 +279,7 @@ export default {
                         errorInfo = error;
                     }
                     alert("构件保存失败。原因："+errorInfo);
+                    throw error;
                 }
             ); 
         },
@@ -371,6 +373,7 @@ export default {
                         errorInfo = error;
                     }
                     alert("构件删除失败。原因："+errorInfo);
+                    throw error;
                 }
             ); 
         },
@@ -397,6 +400,7 @@ export default {
                         errorInfo = error;
                     }
                     alert("查询构件是否存在失败。原因："+errorInfo);
+                    throw error;
                 }
             ); 
         },

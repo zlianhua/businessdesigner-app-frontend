@@ -3,6 +3,16 @@
         <button @click="addQueryService"  title="新增查询服务">
             <font-awesome-icon icon="plus"/>
         </button>
+        <b-form-checkbox
+            id="findAll"
+            @change.native="addQueryAllMethod"
+        >findAll服务
+        </b-form-checkbox>
+        <b-form-checkbox
+            id="findByIdIn"
+            @change.native="addFindByIdIn"
+        >findByIdIn服务
+        </b-form-checkbox>
         <b-table striped responsive :small=true :bordered=true :items="editClass.queryServices" :fields="queryServiceFields" class="my-table"
         ref="queryServicesTable" @row-clicked = "showQueryServiceDetail" head-letiant="light" tbody-tr-class="col-form-label-sm" thead-class="col-form-label-sm">
             <template slot="name" slot-scope="row">
@@ -132,6 +142,82 @@ export default {
             this.editClass.queryServices.push(method);
             this.currentQueryService = method;
             this.$refs.queryServicesTable.refresh();
+        },
+        addQueryAllMethod(event){
+            let isAddFindAll = event.target.value;
+            let hasQueryAll = false;
+            let idx = -1
+            let count = 0
+            for(let querySrv of this.editClass.queryServices){
+                if (querySrv.name==="findAll()"){
+                    hasQueryAll = true
+                    idx = count
+                    break;
+                }
+                count++;
+            }
+            if(isAddFindAll){
+                if(hasQueryAll){
+                    alert("findAll服务已存在!")
+                    return;
+                }
+               let method={
+                    name:"findAll()",
+                    isCreateQueryModel: false,
+                    isTypeQuery: false,
+                    parameters:[]
+                }
+                this.editClass.queryServices.push(method); 
+                this.currentQueryService = method;
+                this.$eventHub.$emit ('serviceChanged',this.editClass);
+                this.$refs.queryServicesTable.refresh(); 
+            }
+
+            if(!isAddFindAll && hasQueryAll && idx>=0){
+               this.deleteQueryService(idx);
+               this.$eventHub.$emit ('serviceChanged',this.editClass);
+               this.$refs.queryServicesTable.refresh(); 
+            }
+        
+        },
+        addFindByIdIn(event){
+            let isAddFindByIdIn = event.target.value;
+            let hasFindByIdIn = false;
+            let idx = -1
+            let count = 0
+            let primaryAttr = cellUtil.findPrimaryAttr(this.editClass,this.entityMap, this.linkMap);
+            let findByIdInMethodName = "findBy"+cellUtil.capitalize(primaryAttr.name)+"In(List<"+primaryAttr.type+"> ids)"
+            for(let querySrv of this.editClass.queryServices){
+                if (querySrv.name===findByIdInMethodName){
+                    hasFindByIdIn = true
+                    idx = count
+                    break;
+                }
+                count++;
+            }
+            if(isAddFindByIdIn){
+                if(hasFindByIdIn){
+                    alert("FindByIdIn服务已存在!")
+                    return;
+                }
+               let method={
+                    name:findByIdInMethodName,
+                    isCreateQueryModel: false,
+                    isTypeQuery: false,
+                    parameters:[]
+                }
+                this.editClass.queryServices.push(method); 
+                this.currentQueryService = method;
+                this.$eventHub.$emit ('serviceChanged',this.editClass);
+                this.$refs.queryServicesTable.refresh(); 
+            }
+
+            if(!isAddFindByIdIn && hasFindByIdIn && idx>=0){
+               this.deleteQueryService(idx);
+               this.$eventHub.$emit ('serviceChanged',this.editClass);
+               this.$refs.queryServicesTable.refresh(); 
+            }
+        
         },
         conditionChanged(item,event){
             item.condition = event.target.value;
