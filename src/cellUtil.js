@@ -40,6 +40,14 @@ export default {
     }
     return parentEntity;
   },
+  hasSelfAssociation: function(entityId, linkMap){
+    for (let [, v] of linkMap){
+      if (v.sourceId === entityId && v.type === "SelfAssociation"){
+        return true;
+      }
+    }
+    return false;
+  },
   findChildrenEntities: function(entityId, entityMap, linkMap){
     let childrenEntities = [];
     for (let [, v] of linkMap){

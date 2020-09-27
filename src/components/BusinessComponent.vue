@@ -295,7 +295,8 @@ export default {
                 method: 'GET',
                 baseURL: this.baseURL,
                 url: aUrl,
-                headers: {'Content-Type': 'application/json'},
+                headers: {'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'},
                 responseEncoding: 'utf8', 
                 responseType: 'text'
             }).then(
@@ -356,7 +357,8 @@ export default {
                 method: 'DELETE',
                 baseURL: this.baseURL,
                 url: aUrl,
-                headers: {'Content-Type': 'application/json'},
+                headers: {'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'},
                 responseEncoding: 'utf8', 
                 responseType: 'text'
             }).then(
@@ -384,7 +386,8 @@ export default {
                 method: 'GET',
                 baseURL: this.baseURL,
                 url: aUrl,
-                headers: {'Content-Type': 'application/json'},
+                headers: {'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json'},
                 responseEncoding: 'utf8', 
                 responseType: 'text'
             }).then(

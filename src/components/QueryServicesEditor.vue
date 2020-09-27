@@ -116,6 +116,14 @@ export default {
             let parameters = [];
             let attributes = this.editClass.attributes;
             attributes = cellUtil.findAttributesOfSuper(this.editClass.id,attributes,false,this.entityMap, this.linkMap);
+            let hasSelfAsso = cellUtil.hasSelfAssociation(this.editClass.id, this.linkMap);
+            let parentAttrName;
+            let primaryAttr = cellUtil.findPrimaryAttr(this.editClass,this.entityMap, this.linkMap);
+            if(hasSelfAsso){
+                parentAttrName="parent"+cellUtil.capitalize(this.editClass.name);
+            }
+            let hasParentParam = false;
+            let primaryAttrIdx=-1;
             for(let attr of attributes){
                 if(!attr.type && attr.attrEnum){
                     attr.type = attr.attrEnum.dataType;
@@ -131,7 +139,22 @@ export default {
                         isNullable:false
                     }
                     parameters.push(parameter);
+                    if(attr.name === parentAttrName){
+                        hasParentParam =true
+                    }
                 }
+            }
+            if(hasSelfAsso && !hasParentParam){
+                let parameter={
+                    name:parentAttrName,
+                    type:primaryAttr.type,
+                    isParameter:false,
+                    condition:"",
+                    relation:"",
+                    sort:"",
+                    isNullable:false
+                }
+                parameters.push(parameter);
             }
             let method={
                 name:"",
@@ -258,12 +281,19 @@ export default {
                     let cName=parameter.name.replace(/\b\w/g, function(l){ return l.toUpperCase() });
                     if(parameter.isParameter){
                         methodNameString+=cName;
-                        if(paramString && paramString!=""){
-                            paramString+=",";
-                        }
-                        paramString+=parameter.type+" "+ parameter.name;
                         if(parameter.condition && parameter.condition!=""){
                             methodNameString+=parameter.condition;
+                            if(parameter.condition !=="IsNotNull" && parameter.condition !=="IsNull"){
+                                if(paramString && paramString!=""){
+                                    paramString+=",";
+                                }
+                                paramString+=parameter.type+" "+ parameter.name;
+                            }
+                        }else{
+                            if(paramString && paramString!=""){
+                                paramString+=",";
+                            }
+                            paramString+=parameter.type+" "+ parameter.name;
                         }
                         if(count<this.currentQueryService.parameters.length-1){
                             if(parameter.relation && parameter.relation!=""){
@@ -299,6 +329,8 @@ export default {
                 }
                 if(paramString!=""){
                     this.currentQueryService.name+="("+paramString+")";
+                }else{
+                    this.currentQueryService.name+="()";
                 }
                 let aCount = 0
                 for(let service of this.editClass.queryServices){

@@ -140,6 +140,8 @@ let currentAttribute;
 let currentAttributeIdx=-1;
 let isShowAttributeProperties=false;
 let pdmFile=null;
+const config = require('../../config/config.js');
+let baseURL = 'http://'+config.metaDataServer.host+":"+config.metaDataServer.port;
 export default {
     name:'ClassPropertiesEditor',
     props:['editClass'],
@@ -272,7 +274,7 @@ export default {
                 if(pdmContent!=null){
                     axios({
                         method: 'post',
-                        baseURL: 'http://localhost:8083',
+                        baseURL: baseURL,
                         url: aUrl,
                         data: pdmContent,
                         headers: {'Content-Type': 'text/xml'},
@@ -360,7 +362,7 @@ export default {
             let _this=this;
             axios({
                 method: 'post',
-                baseURL: 'http://localhost:8083',
+                baseURL: baseURL,
                 url: aUrl,
                 data: dataString,
                 headers: {'Content-Type': 'application/json'},

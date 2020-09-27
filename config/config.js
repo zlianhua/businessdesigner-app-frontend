@@ -1,7 +1,7 @@
 const config = {
     metaDataServer: {
-      host: 'localhost',
-      port: '8083'
+      host: '10.19.14.29',
+      port: '8084'
     },
     showBusinessApplication: true,
     showBusinessRules: true
