@@ -18,7 +18,7 @@
     "@fortawesome/free-solid-svg-icons": "^5.7.2",
     "@fortawesome/vue-fontawesome": "^0.1.5",
     "ajv": "^6.9.1",
-    "axios": "^0.18.0",
+    "axios": "^0.21.1",
     "bootstrap-vue": "^2.0.0-rc.13",
     "dmn-js": "^6.3.3",
     "jointjs": "^2.2.1",
